@@ -20,9 +20,22 @@ description: 从广告视频自动生成落地页 Hero 区域设计方案（5套
 
 ## 项目位置
 
+本技能的脚本位于当前仓库根目录。使用前需确定仓库 clone 位置：
+
+```bash
+# 自动定位：skill 文件所在仓库的根目录
+PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 ```
-/Users/huangmingyao/workspace/landingpage-test-hero-page
-```
+
+如果用户已知项目路径，直接使用即可。否则通过以下方式确认：
+1. 查找本地是否存在 `landingpage-test-hero-page` 目录
+2. 如果不存在，提示用户先 clone：
+   ```bash
+   git clone https://github.com/WongMingJiu/landingpage-test-hero-page.git
+   cd landingpage-test-hero-page
+   cp config.env.example config.env
+   # 编辑 config.env 填入 API 配置
+   ```
 
 ## 执行流程
 
@@ -38,7 +51,7 @@ description: 从广告视频自动生成落地页 Hero 区域设计方案（5套
 切换到项目根目录，使用 `run.sh` 一键完成全部流程（截帧 → 转写 → 分析 → 生成）：
 
 ```bash
-cd /Users/huangmingyao/workspace/landingpage-test-hero-page
+cd <PROJECT_DIR>
 ./run.sh "<视频路径>"
 ```
 
@@ -68,7 +81,7 @@ output/<视频名称>/
 2. 主动告知用户以下两个关键路径：
 
    - **本地结果目录**：
-     `/Users/huangmingyao/workspace/landingpage-test-hero-page/output/<视频名称>/`
+     `<PROJECT_DIR>/output/<视频名称>/`
    - **同步目标位置**（下游 landing-page-manage 项目）：
      `~/workspace/landing-page-manage/唱歌项目/<视频名称>/`
 
@@ -79,7 +92,7 @@ output/<视频名称>/
 当用户希望**保留已有的截帧/转写/分析结果，仅重新生成 Prompt 变体**时（例如调整了 `prompts/generate_prompt.md` 之后），不要重跑 `run.sh`，改用：
 
 ```bash
-cd /Users/huangmingyao/workspace/landingpage-test-hero-page
+cd <PROJECT_DIR>
 export $(grep -v '^#' config.env | xargs)
 export VIDEO_NAME="<视频名称>"
 export OUTPUT_DIR="output/$VIDEO_NAME"
