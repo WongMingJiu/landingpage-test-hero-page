@@ -21,6 +21,7 @@ from pathlib import Path
 from typing import List, Optional
 
 import requests
+from PIL import Image
 
 
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -35,7 +36,13 @@ DEFAULT_OUTPUT_ROOT = DEFAULT_INPUT_ROOT / "landing-page"
 DEFAULT_API_BASE_URL = "https://api-slb.packyapi.com/v1/images/edits"
 DEFAULT_API_KEY = ""
 DEFAULT_MODEL_NAME = "gpt-image-2"
-DEFAULT_SIZE = "1024x1792"
+# gpt-image 系列仅支持 1024x1024 / 1536x1024 / 1024x1536 / auto
+# 选择最接近目标 750x1200（5:8）的竖版尺寸 1024x1536（2:3），生成后缩放到 750 宽
+DEFAULT_SIZE = "1024x1536"
+
+# 输出图片尺寸约束（宽度固定 750，高度等比但不超过 1200）
+OUTPUT_TARGET_WIDTH = 750
+OUTPUT_MAX_HEIGHT = 1200
 
 MAX_RETRIES = 3
 INITIAL_BACKOFF = 2.0  # 秒
@@ -124,6 +131,25 @@ def save_image_from_response(resp_json: dict, output_path: Path) -> None:
         return
 
     raise RuntimeError(f"响应中未找到 b64_json 或 url: {item}")
+
+
+def resize_to_target(
+    image_path: Path,
+    target_width: int = OUTPUT_TARGET_WIDTH,
+    max_height: int = OUTPUT_MAX_HEIGHT,
+) -> tuple:
+    """将图片等比缩放到 target_width 宽，若高度超过 max_height 则截断为 max_height。
+    返回 (new_w, new_h)。
+    """
+    img = Image.open(image_path)
+    w, h = img.size
+    new_w = target_width
+    new_h = int(round(h * (target_width / w)))
+    if new_h > max_height:
+        new_h = max_height
+    img = img.resize((new_w, new_h), Image.LANCZOS)
+    img.save(image_path)
+    return new_w, new_h
 
 
 # ---------- API 调用 ----------
@@ -271,6 +297,12 @@ def process_page(
     except Exception as e:
         print(f"  x 保存图片失败：{e}")
         return False
+
+    try:
+        new_w, new_h = resize_to_target(output_path)
+        print(f"  - 已缩放至 {new_w}x{new_h}")
+    except Exception as e:
+        print(f"  ! 缩放失败（保留原图）：{e}")
 
     print(f"  ✓ 已保存：{output_path}")
     return True

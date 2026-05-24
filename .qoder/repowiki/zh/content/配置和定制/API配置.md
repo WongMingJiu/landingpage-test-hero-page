@@ -16,10 +16,10 @@
 
 ## 更新摘要
 **变更内容**
-- 新增了图像生成API配置支持，扩展了API配置的完整性和实用性
-- 添加了IMAGE_API_BASE_URL、IMAGE_API_KEY、IMAGE_MODEL_NAME等新配置项
-- 新增generate_image.py脚本用于独立的图像生成功能
-- 扩展了多模态分析、文本生成与图像生成的完整工作流程
+- 新增品牌logo引用系统，支持品牌标识参考图和品牌logo文件
+- 扩展多参考图像支持，增强图像生成的参考素材能力
+- 新增向后兼容的prompt文件支持，兼容prompt.txt格式
+- 更新API配置包括品牌logo路径常量(BRAND_LOGO_PATH)和多图像处理能力
 
 ## 目录
 1. [简介](#简介)
@@ -36,14 +36,15 @@
 ## 简介
 本文件面向需要在本项目中配置和使用API的用户，系统性说明config.env中的API相关配置项，以及这些配置在多模态分析、文本生成与图像生成三个阶段中的作用与设置方法。文档同时提供OpenAI兼容API及其他第三方服务的配置要点、安全最佳实践、重试与错误处理策略、性能优化建议与监控指标建议，帮助您在不同API提供商之间进行选择与迁移。
 
-**更新** 本版本新增了图像生成API配置支持，扩展了项目功能的完整性和实用性。
+**更新** 本版本新增了品牌logo引用系统和多参考图像支持，扩展了项目功能的完整性和实用性。
 
 ## 项目结构
-项目采用"脚本驱动 + 环境变量 + Prompt模板"的分层设计，现已扩展为包含多模态分析、文本生成和图像生成的完整工作流程：
+项目采用"脚本驱动 + 环境变量 + Prompt模板"的分层设计，现已扩展为包含多模态分析、文本生成、图像生成和品牌logo引用的完整工作流程：
 - 运行入口：bash脚本负责参数校验、环境变量加载、关键帧与音频提取、调用Python模块。
 - Python模块：分别负责转写、多模态分析、文本生成和图像生成。
 - 配置文件：集中存放API基础URL、密钥、模型名等。
 - Prompt模板：定义系统提示词，指导模型输出结构化结果。
+- 品牌资源：assets目录下的品牌logo和品牌参考图，为图像生成提供品牌一致性保障。
 
 ```mermaid
 graph TB
@@ -60,6 +61,8 @@ J --> D
 J --> E
 K["Prompt 模板 analyze_prompt.md"] --> C
 L["Prompt 模板 generate_prompt.md"] --> D
+M["品牌资源 assets/"] --> D
+M --> E
 ```
 
 **图表来源**
@@ -131,7 +134,25 @@ L["Prompt 模板 generate_prompt.md"] --> D
   - 使用范围：多模态分析阶段，用于均匀采样关键帧。
   - 默认值：5（可在config.env中修改）
 
-**更新** 新增了图像生成API配置支持，包括IMAGE_API_BASE_URL、IMAGE_API_KEY、IMAGE_MODEL_NAME等新配置项，扩展了项目的完整性和实用性。
+- BRAND_LOGO_PATH
+  - 作用：品牌logo文件路径常量，用于图像生成阶段的品牌一致性保障。
+  - 设置位置：generate_image.py中定义，指向assets/brand_logo.png。
+  - 使用范围：图像生成阶段自动检测并添加品牌logo作为参考图。
+  - 注意事项：文件必须存在且为PNG格式，确保品牌栏样式的一致性。
+
+- TEACHER_REF_PATH
+  - 作用：老师参考图路径常量，用于图像生成阶段的老师形象参考。
+  - 设置位置：generate.py中定义，指向ANALYSE_DIR/teacher_ref.jpg。
+  - 使用范围：文本生成阶段生成变体素材时复制到各page目录。
+  - 注意事项：文件必须存在，建议为高质量人像照片。
+
+- BRAND_REFERENCE_SRC
+  - 作用：品牌参考图源文件路径，用于HTML参考页面的展示。
+  - 设置位置：generate.py中定义，指向assets/brand_reference.png。
+  - 使用范围：生成HTML参考页面时展示品牌栏样式。
+  - 注意事项：文件必须存在，用于指导AI生成正确的品牌栏样式。
+
+**更新** 新增了品牌logo引用系统相关配置项，包括BRAND_LOGO_PATH、TEACHER_REF_PATH和BRAND_REFERENCE_SRC，扩展了项目的品牌一致性保障能力。
 
 **章节来源**
 - [config.env:1-22](file://config.env#L1-L22)
@@ -139,9 +160,10 @@ L["Prompt 模板 generate_prompt.md"] --> D
 - [generate.py:622-628](file://generate.py#L622-L628)
 - [generate_image.py:34-36](file://generate_image.py#L34-L36)
 - [transcribe.py:27](file://transcribe.py#L27)
+- [generate.py:46](file://generate.py#L46)
 
 ## 架构总览
-下图展示了从视频到最终生成落地页设计方案的整体流程，包括新增的图像生成阶段，以及API配置在其中的位置与流向。
+下图展示了从视频到最终生成落地页设计方案的整体流程，包括新增的品牌logo引用系统和多参考图像支持，以及API配置在其中的位置与流向。
 
 ```mermaid
 sequenceDiagram
@@ -167,8 +189,11 @@ AN-->>SH : 生成 output/analysis.json
 SH->>GE : 执行文本生成
 GE->>OA : 调用文本API可使用 GENERATE_* 或回退 API_*
 OA-->>GE : 返回Markdown
+GE->>GE : 生成HTML参考页面
+GE->>GE : 复制品牌参考图到各page目录
 GE-->>SH : 生成 Markdown 与 HTML
 SH->>GI : 执行图像生成
+GI->>GI : 检测品牌logo文件
 GI->>IA : 调用图像API IMAGE_API_BASE_URL/IMAGE_API_KEY/IMAGE_MODEL_NAME
 IA-->>GI : 返回生成的图片
 GI-->>SH : 保存生成的落地页图片
@@ -238,12 +263,15 @@ Save --> End(["结束"])
   - 优先读取GENERATE_*（若存在），否则回退到API_*。
   - 重试机制：最多3次，指数退避。
   - 温度参数：0.6，偏向创造性输出。
+  - 品牌参考图：自动生成HTML参考页面，展示品牌栏样式。
+  - 向后兼容：支持prompt.md和prompt.txt两种文件格式。
 - 错误处理
   - 缺少必要环境变量时直接报错退出。
   - HTML渲染优先使用markdown库，失败则回退到简易渲染器。
   - 增强的变体提取和素材分发机制。
+  - 品牌参考图缺失时发出警告并继续处理。
 
-**更新** 改进了HTML渲染的回退策略，增强了变体提取和素材分发功能。
+**更新** 改进了HTML渲染的回退策略，增强了变体提取和素材分发功能，新增品牌参考图支持和向后兼容的prompt文件处理。
 
 ```mermaid
 sequenceDiagram
@@ -255,16 +283,22 @@ ENV-->>GE : 若为空则回退到 API_* 与 MODEL_NAME
 GE->>OA : 调用文本API最多3次
 OA-->>GE : 返回Markdown
 GE->>GE : 渲染HTML优先markdown库，失败回退
+GE->>GE : 生成品牌参考HTML页面
+GE->>GE : 复制品牌参考图到各page目录
 GE-->>GE : 保存 Markdown 与 HTML
 ```
 
 **图表来源**
 - [generate.py:619-712](file://generate.py#L619-L712)
 - [generate.py:38-68](file://generate.py#L38-L68)
+- [generate.py:420-513](file://generate.py#L420-L513)
+- [generate.py:570-614](file://generate.py#L570-L614)
 
 **章节来源**
 - [generate.py:619-712](file://generate.py#L619-L712)
 - [prompts/generate_prompt.md:1-130](file://prompts/generate_prompt.md#L1-L130)
+- [generate.py:420-513](file://generate.py#L420-L513)
+- [generate.py:570-614](file://generate.py#L570-L614)
 
 ### 图像生成模块（generate_image.py）
 - 功能概述
@@ -275,13 +309,16 @@ GE-->>GE : 保存 Markdown 与 HTML
   - 默认尺寸：1024x1792（竖版1080x1920）。
   - 重试机制：最多3次，指数退避（2^attempt-1秒）。
   - 超时设置：600秒，适应图像生成较长耗时。
+  - 品牌logo支持：自动检测assets/brand_logo.png并作为参考图。
+  - 多参考图像：支持多张参考图（包括品牌logo和老师参考图）。
 - 错误处理
   - 缺少必要环境变量时直接报错退出。
   - API响应格式兼容：支持b64_json和url两种返回格式。
   - 图片保存：自动处理base64解码和URL下载。
   - 页面过滤：支持指定页面编号列表处理。
+  - 品牌logo缺失：仅使用老师参考图继续处理。
 
-**更新** 新增了完整的图像生成API配置支持，包括独立的generate_image.py脚本和完整的图像生成功能。
+**更新** 新增了完整的图像生成API配置支持，包括独立的generate_image.py脚本、品牌logo引用系统、多参考图像支持和增强的错误处理机制。
 
 ```mermaid
 flowchart TD
@@ -295,7 +332,11 @@ FilterPages --> ProcessPage["处理单个 page"]
 ProcessPage --> ReadPrompt["读取 prompt.md/prompt.txt"]
 ReadPrompt --> CheckFiles{"文件是否存在？"}
 CheckFiles --> |否| PageFail["标记失败并继续"]
-CheckFiles --> |是| CallAPI["调用图像API最多3次"]
+CheckFiles --> |是| CheckBrandLogo["检查品牌logo文件"]
+CheckBrandLogo --> |存在| AddBrandRef["添加品牌logo作为参考图"]
+CheckBrandLogo --> |不存在| UseTeacherOnly["仅使用老师参考图"]
+AddBrandRef --> CallAPI["调用图像API最多3次"]
+UseTeacherOnly --> CallAPI
 CallAPI --> SaveImage["保存图片<br/>支持b64_json或url"]
 SaveImage --> NextPage["处理下一个页面"]
 NextPage --> Done{"还有页面吗？"}
@@ -307,6 +348,7 @@ Done --> |否| End(["结束"])
 - [generate_image.py:311-393](file://generate_image.py#L311-L393)
 - [generate_image.py:203-258](file://generate_image.py#L203-L258)
 - [generate_image.py:130-167](file://generate_image.py#L130-L167)
+- [generate_image.py:244-250](file://generate_image.py#L244-L250)
 
 **章节来源**
 - [generate_image.py:1-398](file://generate_image.py#L1-L398)
@@ -347,8 +389,11 @@ SaveText --> End(["结束"])
   - transcribe.py依赖openai-whisper库，通过WHISPER_MODEL控制模型大小。
 - Prompt模板
   - analyze_prompt.md与generate_prompt.md分别作为系统提示词，决定模型输出结构与内容。
+- 品牌资源
+  - generate.py与generate_image.py共享assets目录下的品牌资源文件。
+  - generate.py生成品牌参考HTML页面，generate_image.py使用品牌logo文件。
 
-**更新** 依赖管理更加严格，新增了对图像生成API的requests库依赖。
+**更新** 依赖管理更加严格，新增了对图像生成API的requests库依赖和品牌资源的共享机制。
 
 ```mermaid
 graph TB
@@ -363,6 +408,8 @@ GI --> REQ["requests 库"]
 T --> W["openai-whisper 库"]
 A --> P1["prompts/analyze_prompt.md"]
 G --> P2["prompts/generate_prompt.md"]
+G --> BR["assets/brand_reference.png"]
+GI --> BL["assets/brand_logo.png"]
 ```
 
 **图表来源**
@@ -396,8 +443,12 @@ G --> P2["prompts/generate_prompt.md"]
 - 图像生成优化
   - 支持批量页面处理，可指定页面范围减少处理时间。
   - 默认尺寸1024x1792，平衡质量和生成速度。
+  - 多参考图像支持，提升生成质量的一致性。
+- 品牌一致性优化
+  - 品牌logo自动检测和引用，确保生成图片的品牌栏样式一致性。
+  - 品牌参考HTML页面辅助设计师理解品牌规范。
 
-**更新** 新增了图像生成阶段的性能优化建议，包括超时设置、批量处理和尺寸优化。
+**更新** 新增了图像生成阶段的性能优化建议，包括超时设置、批量处理、尺寸优化和品牌一致性保障。
 
 ## 故障排查指南
 - 缺少必要环境变量
@@ -468,10 +519,28 @@ G --> P2["prompts/generate_prompt.md"]
   - 参考
     - [generate_image.py:251-255](file://generate_image.py#L251-L255)
 
-**更新** 新增了图像生成API调用失败和图片保存失败的故障排查指南。
+- 品牌logo文件缺失
+  - 现象：图像生成时仅使用老师参考图，品牌栏样式可能不一致。
+  - 排查：确认assets/brand_logo.png存在且为PNG格式，检查文件权限。
+  - 参考
+    - [generate_image.py:244-250](file://generate_image.py#L244-L250)
+
+- 品牌参考图复制失败
+  - 现象：文本生成阶段复制品牌参考图到各page目录失败。
+  - 排查：检查assets/brand_reference.png存在性、磁盘空间、目标目录权限。
+  - 参考
+    - [generate.py:601-607](file://generate.py#L601-L607)
+
+- 向后兼容的prompt文件处理
+  - 现象：文本生成阶段无法找到prompt.md文件。
+  - 排查：确认存在prompt.md或prompt.txt文件，检查文件编码和格式。
+  - 参考
+    - [generate.py:587-590](file://generate.py#L587-L590)
+
+**更新** 新增了品牌logo文件缺失、品牌参考图复制失败和向后兼容的prompt文件处理等故障排查指南。
 
 ## 结论
-本项目的API配置围绕"环境变量 + Prompt模板"的模式展开，通过config.env集中管理API基础URL、密钥与模型名，并在运行脚本中统一注入。多模态分析、文本生成和图像生成三个阶段均采用OpenAI兼容API，具备完善的重试与错误处理机制。本地转写使用Whisper模型，支持灵活的模型规模选择。**更新** 新版本新增了完整的图像生成API配置支持，包括独立的generate_image.py脚本和完整的图像生成功能，显著扩展了项目的实用性和完整性。建议在生产环境中遵循安全最佳实践，合理选择API提供商与模型，并结合监控指标持续优化性能与稳定性。
+本项目的API配置围绕"环境变量 + Prompt模板"的模式展开，通过config.env集中管理API基础URL、密钥与模型名，并在运行脚本中统一注入。多模态分析、文本生成和图像生成三个阶段均采用OpenAI兼容API，具备完善的重试与错误处理机制。本地转写使用Whisper模型，支持灵活的模型规模选择。**更新** 新版本新增了完整的图像生成API配置支持、品牌logo引用系统和多参考图像支持，显著扩展了项目的实用性和完整性。新增的品牌一致性保障机制确保生成图片的品牌栏样式统一，多参考图像支持提升了生成质量。建议在生产环境中遵循安全最佳实践，合理选择API提供商与模型，并结合监控指标持续优化性能与稳定性。
 
 ## 附录
 
@@ -575,7 +644,31 @@ G --> P2["prompts/generate_prompt.md"]
     - [config.env:16](file://config.env#L16)
     - [analyze.py:227](file://analyze.py#L227)
 
-**更新** 新增了图像生成API配置项，包括IMAGE_API_BASE_URL、IMAGE_API_KEY、IMAGE_MODEL_NAME等新配置项。
+- BRAND_LOGO_PATH
+  - 类型：字符串（路径）
+  - 必填：否
+  - 默认值：assets/brand_logo.png
+  - 用途：品牌logo文件路径，用于图像生成阶段的品牌一致性保障
+  - 参考
+    - [generate_image.py:28](file://generate_image.py#L28)
+
+- TEACHER_REF_PATH
+  - 类型：字符串（路径）
+  - 必填：否
+  - 默认值：ANALYSE_DIR/teacher_ref.jpg
+  - 用途：老师参考图路径，用于图像生成阶段的老师形象参考
+  - 参考
+    - [generate.py:46](file://generate.py#L46)
+
+- BRAND_REFERENCE_SRC
+  - 类型：字符串（路径）
+  - 必填：否
+  - 默认值：assets/brand_reference.png
+  - 用途：品牌参考图源文件路径，用于HTML参考页面展示
+  - 参考
+    - [generate.py:46](file://generate.py#L46)
+
+**更新** 新增了品牌logo引用系统相关配置项，包括BRAND_LOGO_PATH、TEACHER_REF_PATH和BRAND_REFERENCE_SRC，扩展了项目的品牌一致性保障能力。
 
 ### OpenAI兼容API与其他第三方服务配置要点
 - 基础URL与版本
@@ -594,6 +687,7 @@ G --> P2["prompts/generate_prompt.md"]
   - 确保API支持/images/edits端点和multipart/form-data格式。
   - 支持b64_json和url两种响应格式。
   - 提供适当的超时设置以适应较长的生成时间。
+  - 支持多参考图像上传，提升生成质量一致性。
 
 ### 付费API与免费API选择建议
 - 付费API
@@ -607,6 +701,7 @@ G --> P2["prompts/generate_prompt.md"]
 - 图像生成API选择
   - 图像生成API通常比文本API更昂贵，建议根据预算选择合适的提供商。
   - 考虑API的生成速度、质量、并发限制等因素。
+  - 优先选择支持多参考图像和品牌一致性保障的API服务。
 
 ### API密钥安全管理最佳实践
 - 使用环境变量
@@ -631,13 +726,16 @@ G --> P2["prompts/generate_prompt.md"]
   - 三阶段均实现最多3次重试，指数退避（2^attempt-1秒）。
 - 错误处理
   - 缺少必要变量、返回空内容、JSON解析失败、依赖库缺失、API调用失败等均有明确报错与回退策略。
+  - 品牌logo缺失时发出警告并继续处理。
+  - 品牌参考图复制失败时发出警告并继续处理。
 - 建议
   - 在API侧增加幂等标识与重试窗口，避免重复消费；在应用侧记录重试次数与延迟，便于监控。
 - 图像生成特殊处理
   - 支持b64_json和url两种响应格式的兼容处理。
   - 自动处理base64解码和URL下载。
+  - 多参考图像支持，提升生成质量一致性。
 
-**更新** 增强了错误处理和验证机制，提供了更详细的错误报告和故障排查指南，新增了图像生成API的特殊处理机制。
+**更新** 增强了错误处理和验证机制，提供了更详细的错误报告和故障排查指南，新增了图像生成API的特殊处理机制和品牌一致性保障。
 
 **章节来源**
 - [analyze.py:190-208](file://analyze.py#L190-L208)
@@ -653,6 +751,8 @@ G --> P2["prompts/generate_prompt.md"]
   - 图像验证：利用JPEG魔术字节检查和大小限制，提高API调用成功率。
   - 批量处理：图像生成支持批量页面处理，可指定页面范围减少处理时间。
   - 尺寸优化：合理设置图像尺寸，在质量和速度间取得平衡。
+  - 品牌一致性优化：利用品牌logo自动检测和引用，确保生成图片的品牌栏样式统一。
+  - 多参考图像：合理使用多张参考图提升生成质量的一致性。
 - 监控指标建议
   - 响应时间：平均响应时间、P95/P99延迟。
   - 成功率：API调用成功率、重试次数分布。
@@ -661,6 +761,7 @@ G --> P2["prompts/generate_prompt.md"]
   - 成本：按调用次数与Token数统计费用。
   - 帧处理：关键帧数量、采样效率、图像验证成功率。
   - 图像生成：生成时间、成功率、失败原因分类、成本统计。
+  - 品牌一致性：品牌logo引用成功率、品牌栏样式一致性评分。
   - 并发监控：同时进行的API调用数量、队列长度、等待时间。
 
-**更新** 新增了图像生成阶段的性能优化建议和监控指标，包括生成时间、成功率和成本统计等。
+**更新** 新增了图像生成阶段的性能优化建议和监控指标，包括生成时间、成功率、成本统计和品牌一致性保障等。
