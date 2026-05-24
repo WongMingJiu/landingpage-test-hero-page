@@ -67,9 +67,11 @@ output/<视频名称>/
 ├── analyse_result/        # analysis.json + landing_page_design.md/.html
 ├── video_clip_result/     # 视频帧 + 音频 + 转写
 └── design_refer/          # 5 套生图 Prompt 变体素材
-    ├── page1/             # prompt.md + teacher_ref.jpg + brand_reference.png
+    ├── page1/             # prompt.md + teacher_ref.jpg
     ├── page2/ ... page5/
 ```
+
+> 生成的 prompt.md 中**品牌栏描述会自动引用项目固定的 `assets/brand_logo.png`**，不再依赖 AI 文字渲染品牌名，确保品牌一致性。
 
 同时自动同步到：`~/workspace/landing-page-manage/唱歌项目/<视频名称>/`
 
@@ -102,22 +104,44 @@ output/<视频名称>/
 
 ### B2. 执行生图脚本
 
+> ⚠️ **代理绕过**：调用生图 API 时若本机存在 HTTP 代理，需用 `no_proxy='*' NO_PROXY='*'` 前缀绕过，避免连接错误。
+
 ```bash
 cd <PROJECT_DIR>
 # 全部生成
-python3 generate_image.py "<视频名称>"
+no_proxy='*' NO_PROXY='*' python3 generate_image.py "<视频名称>"
 
 # 指定 page
-python3 generate_image.py "<视频名称>" --pages 1 3 5
+no_proxy='*' NO_PROXY='*' python3 generate_image.py "<视频名称>" --pages 1 3 5
 ```
 
-### B3. 展示生图结果
+### B3. 生图机制说明
 
-输出路径：`~/workspace/landing-page-manage/唱歌项目/landing-page/<视频名称>/pageN/result.png`
+生图调用会**自动附加两张参考图**：
+
+| 参考图 | 来源 | 作用 |
+| --- | --- | --- |
+| `teacher_ref.jpg` | `~/workspace/landing-page-manage/唱歌项目/<视频名>/pageN/teacher_ref.jpg` | 老师形象一致性 |
+| `assets/brand_logo.png` | 项目根目录固定素材 | 品牌栏 logo 一致性 |
+
+品牌栏不依赖 AI 文字渲染品牌名，而是直接引用固定 logo 参考图，确保跨页视觉统一。
+
+### B4. 展示生图结果
+
+输出为**平铺结构**（不再有 pageN 子目录）：
+
+```
+~/workspace/landing-page-manage/唱歌项目/landing-page/<视频名称>/
+├── page1.png
+├── page2.png
+├── page3.png
+├── page4.png
+└── page5.png
+```
 
 告知用户每个生成成功的图片位置，并打开查看（如果在 macOS）：
 ```bash
-open ~/workspace/landing-page-manage/唱歌项目/landing-page/<视频名称>/page1/result.png
+open ~/workspace/landing-page-manage/唱歌项目/landing-page/<视频名称>/page1.png
 ```
 
 ---
@@ -160,5 +184,5 @@ python3 generate.py
 - [ ] 已询问用户是否继续生图
 
 ### 路径 B 完成后：
-- [ ] `~/workspace/landing-page-manage/唱歌项目/landing-page/<视频名称>/pageN/result.png` 已生成
+- [ ] `~/workspace/landing-page-manage/唱歌项目/landing-page/<视频名称>/pageN.png` 已生成（平铺结构）
 - [ ] 已告知用户图片保存位置
