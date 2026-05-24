@@ -85,11 +85,30 @@ chmod +x run.sh
 
 ### 方式二：Qoder Skill 触发
 
-在 Qoder 中安装本项目对应的 skill 后，直接对话触发即可：
+在 Qoder 中打开本项目后，skill 自动加载。支持两种输入模式：
 
+**模式 1：输入视频**（分析 + 生成 Prompt + 可选生图）
 > "帮我分析这个视频生成落地页设计方案：/path/to/video.mp4"
 
-Qoder 会自动调用本工具完成整套流水线，并将结果同步到设计管理项目。
+Skill 会先执行分析流水线生成 5 套 Prompt 变体，完成后**询问你是否继续调用生图 API 生成图片**。
+
+**模式 2：输入视频名称直接生图**（已有 Prompt 素材时）
+> "帮我把 陈家智-xxx 的方案生成图片"
+> "跑一下生图，视频名：xxx，只生成 page 1 3 5"
+
+Skill 会直接调用 `generate_image.py` 生成落地页图片。
+
+### 方式三：终端单独跑生图
+
+```bash
+# 全部 5 套
+python3 generate_image.py "视频名称"
+
+# 指定 page
+python3 generate_image.py "视频名称" --pages 1 3 5
+```
+
+生成的图片保存到：`~/workspace/landing-page-manage/唱歌项目/landing-page/{视频名称}/pageN/result.png`
 
 ## 输出结构
 
