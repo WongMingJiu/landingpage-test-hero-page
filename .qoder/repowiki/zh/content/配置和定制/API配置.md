@@ -8,6 +8,7 @@
 - [requirements.txt](file://requirements.txt)
 - [analyze.py](file://analyze.py)
 - [generate.py](file://generate.py)
+- [generate_image.py](file://generate_image.py)
 - [transcribe.py](file://transcribe.py)
 - [prompts/analyze_prompt.md](file://prompts/analyze_prompt.md)
 - [prompts/generate_prompt.md](file://prompts/generate_prompt.md)
@@ -15,11 +16,10 @@
 
 ## 更新摘要
 **变更内容**
-- 新增了增强的错误处理和验证机制
-- 改进了配置模板方法和环境变量管理
-- 增强了依赖管理和错误报告
-- 优化了帧采样和图像验证机制
-- 改进了HTML渲染的回退策略
+- 新增了图像生成API配置支持，扩展了API配置的完整性和实用性
+- 添加了IMAGE_API_BASE_URL、IMAGE_API_KEY、IMAGE_MODEL_NAME等新配置项
+- 新增generate_image.py脚本用于独立的图像生成功能
+- 扩展了多模态分析、文本生成与图像生成的完整工作流程
 
 ## 目录
 1. [简介](#简介)
@@ -34,14 +34,14 @@
 10. [附录](#附录)
 
 ## 简介
-本文件面向需要在本项目中配置和使用API的用户，系统性说明config.env中的API相关配置项，以及这些配置在多模态分析、文本生成与本地转写三个阶段中的作用与设置方法。文档同时提供OpenAI兼容API及其他第三方服务的配置要点、安全最佳实践、重试与错误处理策略、性能优化建议与监控指标建议，帮助您在不同API提供商之间进行选择与迁移。
+本文件面向需要在本项目中配置和使用API的用户，系统性说明config.env中的API相关配置项，以及这些配置在多模态分析、文本生成与图像生成三个阶段中的作用与设置方法。文档同时提供OpenAI兼容API及其他第三方服务的配置要点、安全最佳实践、重试与错误处理策略、性能优化建议与监控指标建议，帮助您在不同API提供商之间进行选择与迁移。
 
-**更新** 本版本反映了新的配置模板方法、增强的错误处理和验证、改进的依赖管理等应用变更。
+**更新** 本版本新增了图像生成API配置支持，扩展了项目功能的完整性和实用性。
 
 ## 项目结构
-项目采用"脚本驱动 + 环境变量 + Prompt模板"的分层设计：
+项目采用"脚本驱动 + 环境变量 + Prompt模板"的分层设计，现已扩展为包含多模态分析、文本生成和图像生成的完整工作流程：
 - 运行入口：bash脚本负责参数校验、环境变量加载、关键帧与音频提取、调用Python模块。
-- Python模块：分别负责转写、多模态分析、文本生成。
+- Python模块：分别负责转写、多模态分析、文本生成和图像生成。
 - 配置文件：集中存放API基础URL、密钥、模型名等。
 - Prompt模板：定义系统提示词，指导模型输出结构化结果。
 
@@ -50,13 +50,16 @@ graph TB
 A["运行脚本 run.sh"] --> B["转写模块 transcribe.py"]
 A --> C["分析模块 analyze.py"]
 A --> D["生成模块 generate.py"]
-B --> E["Whisper 本地模型"]
-C --> F["OpenAI 兼容API"]
-D --> G["OpenAI 兼容API"]
-H["配置文件 config.env"] --> C
-H --> D
-I["Prompt 模板 analyze_prompt.md"] --> C
-J["Prompt 模板 generate_prompt.md"] --> D
+A --> E["图像生成模块 generate_image.py"]
+B --> F["Whisper 本地模型"]
+C --> G["OpenAI 兼容API"]
+D --> H["OpenAI 兼容API"]
+E --> I["图像生成API"]
+J["配置文件 config.env"] --> C
+J --> D
+J --> E
+K["Prompt 模板 analyze_prompt.md"] --> C
+L["Prompt 模板 generate_prompt.md"] --> D
 ```
 
 **图表来源**
@@ -64,39 +67,58 @@ J["Prompt 模板 generate_prompt.md"] --> D
 - [transcribe.py:21-62](file://transcribe.py#L21-L62)
 - [analyze.py:76-125](file://analyze.py#L76-L125)
 - [generate.py:38-68](file://generate.py#L38-L68)
-- [config.env:1-17](file://config.env#L1-L17)
+- [generate_image.py:130-167](file://generate_image.py#L130-L167)
+- [config.env:1-22](file://config.env#L1-L22)
 - [prompts/analyze_prompt.md:1-153](file://prompts/analyze_prompt.md#L1-L153)
 - [prompts/generate_prompt.md:1-130](file://prompts/generate_prompt.md#L1-L130)
 
 **章节来源**
 - [run.sh:1-197](file://run.sh#L1-L197)
-- [config.env:1-17](file://config.env#L1-L17)
+- [config.env:1-22](file://config.env#L1-L22)
 
 ## 核心组件
 本节聚焦于API配置项及其在各模块中的使用方式与注意事项。
 
 - API_BASE_URL
-  - 作用：指定OpenAI兼容API的基础访问地址（通常以/v1结尾）。
+  - 作用：指定多模态分析阶段OpenAI兼容API的基础访问地址（通常以/v1结尾）。
   - 设置位置：config.env中"多模态分析 API 配置"段落；也可在运行时通过环境变量覆盖。
-  - 使用范围：多模态分析与落地页生成两个阶段均会读取该值。
-  - 注意事项：确保末尾斜杠与版本号符合目标服务端要求；若使用"落地页生成专用配置"，可单独覆盖。
+  - 使用范围：多模态分析阶段读取该值。
+  - 注意事项：确保末尾斜杠与版本号符合目标服务端要求。
 
 - API_KEY
-  - 作用：API密钥，用于鉴权。
+  - 作用：多模态分析阶段API密钥，用于鉴权。
   - 设置位置：config.env中"多模态分析 API 配置"段落；也可在运行时通过环境变量覆盖。
-  - 使用范围：多模态分析与落地页生成两个阶段均会读取该值。
+  - 使用范围：多模态分析阶段读取该值。
   - 安全建议：避免硬编码在代码中；优先通过config.env与环境变量注入；在CI/CD中使用机密变量。
 
 - MODEL_NAME
-  - 作用：指定调用的模型名称（例如多模态模型或文本模型）。
+  - 作用：指定多模态分析阶段调用的模型名称。
   - 设置位置：config.env中"多模态分析 API 配置"段落；也可在运行时通过环境变量覆盖。
-  - 使用范围：多模态分析与落地页生成两个阶段均会读取该值。
+  - 使用范围：多模态分析阶段读取该值。
   - 注意事项：不同服务提供商的模型命名差异较大，需与实际可用模型一致。
 
 - GENERATE_*（可选）
-  - 作用：为"落地页生成"阶段提供独立的API基础URL、密钥与模型名，便于与"多模态分析"阶段分离。
+  - 作用：为"文本生成"阶段提供独立的API基础URL、密钥与模型名，便于与"多模态分析"阶段分离。
   - 设置位置：config.env中"落地页生成 API 配置（可选）"段落。
   - 使用逻辑：生成模块会优先读取GENERATE_*，否则回退到API_*。
+
+- IMAGE_API_BASE_URL
+  - 作用：指定图像生成API的基础访问地址，支持/images/edits端点。
+  - 设置位置：config.env中"生图 API 配置"段落；也可在运行时通过命令行参数覆盖。
+  - 使用范围：图像生成阶段读取该值。
+  - 注意事项：确保端点支持multipart/form-data上传和/images/edits接口。
+
+- IMAGE_API_KEY
+  - 作用：图像生成API密钥，用于鉴权。
+  - 设置位置：config.env中"生图 API 配置"段落；也可在运行时通过命令行参数覆盖。
+  - 使用范围：图像生成阶段读取该值。
+  - 安全建议：避免硬编码在代码中；优先通过config.env与环境变量注入。
+
+- IMAGE_MODEL_NAME
+  - 作用：指定图像生成阶段调用的模型名称（如gpt-image-2）。
+  - 设置位置：config.env中"生图 API 配置"段落；也可在运行时通过命令行参数覆盖。
+  - 使用范围：图像生成阶段读取该值。
+  - 注意事项：不同服务提供商的模型命名差异较大，需与实际可用模型一致。
 
 - WHISPER_MODEL
   - 作用：本地Whisper模型大小（如small、medium等），用于音频转写。
@@ -104,21 +126,22 @@ J["Prompt 模板 generate_prompt.md"] --> D
   - 使用范围：仅在转写阶段生效。
 
 - MAX_API_FRAMES
-  - 作用：控制发送给API的最大帧数，防止token过多或API图片数量限制。
+  - 作用：控制发送给多模态分析API的最大帧数，防止token过多或API图片数量限制。
   - 设置位置：config.env中"多模态分析：发送给 API 的最大帧数"段落。
   - 使用范围：多模态分析阶段，用于均匀采样关键帧。
   - 默认值：5（可在config.env中修改）
 
-**更新** 新增了MAX_API_FRAMES配置项，用于控制多模态分析阶段发送给API的关键帧数量。
+**更新** 新增了图像生成API配置支持，包括IMAGE_API_BASE_URL、IMAGE_API_KEY、IMAGE_MODEL_NAME等新配置项，扩展了项目的完整性和实用性。
 
 **章节来源**
-- [config.env:1-17](file://config.env#L1-L17)
+- [config.env:1-22](file://config.env#L1-L22)
 - [analyze.py:225-236](file://analyze.py#L225-L236)
 - [generate.py:622-628](file://generate.py#L622-L628)
+- [generate_image.py:34-36](file://generate_image.py#L34-L36)
 - [transcribe.py:27](file://transcribe.py#L27)
 
 ## 架构总览
-下图展示了从视频到最终生成落地页设计方案的整体流程，以及API配置在其中的位置与流向。
+下图展示了从视频到最终生成落地页设计方案的整体流程，包括新增的图像生成阶段，以及API配置在其中的位置与流向。
 
 ```mermaid
 sequenceDiagram
@@ -127,7 +150,9 @@ participant SH as "run.sh"
 participant TR as "transcribe.py"
 participant AN as "analyze.py"
 participant GE as "generate.py"
+participant GI as "generate_image.py"
 participant OA as "OpenAI 兼容API"
+participant IA as "图像生成API"
 participant WH as "Whisper 本地模型"
 U->>SH : 传入视频文件路径
 SH->>SH : 加载 config.env 并注入环境变量
@@ -139,10 +164,14 @@ SH->>AN : 执行多模态分析
 AN->>OA : 调用多模态API API_BASE_URL/API_KEY/MODEL_NAME
 OA-->>AN : 返回结构化JSON
 AN-->>SH : 生成 output/analysis.json
-SH->>GE : 执行生成
+SH->>GE : 执行文本生成
 GE->>OA : 调用文本API可使用 GENERATE_* 或回退 API_*
 OA-->>GE : 返回Markdown
 GE-->>SH : 生成 Markdown 与 HTML
+SH->>GI : 执行图像生成
+GI->>IA : 调用图像API IMAGE_API_BASE_URL/IMAGE_API_KEY/IMAGE_MODEL_NAME
+IA-->>GI : 返回生成的图片
+GI-->>SH : 保存生成的落地页图片
 SH-->>U : 输出完整产物
 ```
 
@@ -151,7 +180,8 @@ SH-->>U : 输出完整产物
 - [transcribe.py:21-62](file://transcribe.py#L21-L62)
 - [analyze.py:76-125](file://analyze.py#L76-L125)
 - [generate.py:38-68](file://generate.py#L38-L68)
-- [config.env:1-17](file://config.env#L1-L17)
+- [generate_image.py:130-167](file://generate_image.py#L130-L167)
+- [config.env:1-22](file://config.env#L1-L22)
 
 ## 详细组件分析
 
@@ -201,7 +231,7 @@ Save --> End(["结束"])
 - [analyze.py:76-125](file://analyze.py#L76-L125)
 - [prompts/analyze_prompt.md:1-153](file://prompts/analyze_prompt.md#L1-L153)
 
-### 落地页生成模块（generate.py）
+### 文本生成模块（generate.py）
 - 功能概述
   - 读取分析结果，替换prompt模板中的占位符，调用OpenAI兼容API生成Markdown，并生成HTML。
 - 关键配置项
@@ -236,6 +266,51 @@ GE-->>GE : 保存 Markdown 与 HTML
 - [generate.py:619-712](file://generate.py#L619-L712)
 - [prompts/generate_prompt.md:1-130](file://prompts/generate_prompt.md#L1-L130)
 
+### 图像生成模块（generate_image.py）
+- 功能概述
+  - 读取生图Prompt和参考图，调用图像生成API生成落地页图片，支持多页面批量处理。
+- 关键配置项
+  - IMAGE_API_BASE_URL、IMAGE_API_KEY、IMAGE_MODEL_NAME：从环境变量读取，用于构建客户端与发起请求。
+  - 支持命令行参数覆盖：--url、--key、--model、--size。
+  - 默认尺寸：1024x1792（竖版1080x1920）。
+  - 重试机制：最多3次，指数退避（2^attempt-1秒）。
+  - 超时设置：600秒，适应图像生成较长耗时。
+- 错误处理
+  - 缺少必要环境变量时直接报错退出。
+  - API响应格式兼容：支持b64_json和url两种返回格式。
+  - 图片保存：自动处理base64解码和URL下载。
+  - 页面过滤：支持指定页面编号列表处理。
+
+**更新** 新增了完整的图像生成API配置支持，包括独立的generate_image.py脚本和完整的图像生成功能。
+
+```mermaid
+flowchart TD
+Start(["开始"]) --> LoadConfig["读取 config.env<br/>IMAGE_API_BASE_URL/IMAGE_API_KEY/IMAGE_MODEL_NAME"]
+LoadConfig --> ParseArgs["解析命令行参数<br/>覆盖配置项"]
+ParseArgs --> CheckKey{"IMAGE_API_KEY 是否存在？"}
+CheckKey --> |否| ExitErr["报错并退出"]
+CheckKey --> |是| ScanPages["扫描视频目录<br/>查找 pageN 子目录"]
+ScanPages --> FilterPages["过滤指定页面<br/>或处理全部"]
+FilterPages --> ProcessPage["处理单个 page"]
+ProcessPage --> ReadPrompt["读取 prompt.md/prompt.txt"]
+ReadPrompt --> CheckFiles{"文件是否存在？"}
+CheckFiles --> |否| PageFail["标记失败并继续"]
+CheckFiles --> |是| CallAPI["调用图像API最多3次"]
+CallAPI --> SaveImage["保存图片<br/>支持b64_json或url"]
+SaveImage --> NextPage["处理下一个页面"]
+NextPage --> Done{"还有页面吗？"}
+Done --> |是| ProcessPage
+Done --> |否| End(["结束"])
+```
+
+**图表来源**
+- [generate_image.py:311-393](file://generate_image.py#L311-L393)
+- [generate_image.py:203-258](file://generate_image.py#L203-L258)
+- [generate_image.py:130-167](file://generate_image.py#L130-L167)
+
+**章节来源**
+- [generate_image.py:1-398](file://generate_image.py#L1-L398)
+
 ### 本地转写模块（transcribe.py）
 - 功能概述
   - 使用openai-whisper加载指定模型，对音频进行转写，输出文本。
@@ -268,11 +343,12 @@ SaveText --> End(["结束"])
   - 对外部工具（ffmpeg、python3）进行依赖检查。
 - Python模块
   - analyze.py与generate.py均依赖openai库，通过API_BASE_URL与API_KEY初始化客户端。
+  - generate_image.py依赖requests库，通过IMAGE_API_BASE_URL与IMAGE_API_KEY初始化客户端。
   - transcribe.py依赖openai-whisper库，通过WHISPER_MODEL控制模型大小。
 - Prompt模板
   - analyze_prompt.md与generate_prompt.md分别作为系统提示词，决定模型输出结构与内容。
 
-**更新** 依赖管理更加严格，增加了对必需依赖的检查和错误报告。
+**更新** 依赖管理更加严格，新增了对图像生成API的requests库依赖。
 
 ```mermaid
 graph TB
@@ -280,8 +356,10 @@ R["run.sh"] --> C["config.env"]
 R --> T["transcribe.py"]
 R --> A["analyze.py"]
 R --> G["generate.py"]
+R --> GI["generate_image.py"]
 A --> O["openai 库"]
 G --> O
+GI --> REQ["requests 库"]
 T --> W["openai-whisper 库"]
 A --> P1["prompts/analyze_prompt.md"]
 G --> P2["prompts/generate_prompt.md"]
@@ -289,40 +367,46 @@ G --> P2["prompts/generate_prompt.md"]
 
 **图表来源**
 - [run.sh:42-52](file://run.sh#L42-L52)
-- [requirements.txt:1-4](file://requirements.txt#L1-L4)
+- [requirements.txt:1-5](file://requirements.txt#L1-L5)
 - [prompts/analyze_prompt.md:1-153](file://prompts/analyze_prompt.md#L1-L153)
 - [prompts/generate_prompt.md:1-130](file://prompts/generate_prompt.md#L1-L130)
 
 **章节来源**
 - [run.sh:42-52](file://run.sh#L42-L52)
-- [requirements.txt:1-4](file://requirements.txt#L1-L4)
+- [requirements.txt:1-5](file://requirements.txt#L1-L5)
 
 ## 性能考虑
 - 模型选择
   - 多模态分析阶段温度较低（0.3），适合稳定输出；生成阶段温度较高（0.6），利于创意表达。
+  - 图像生成阶段使用专门的图像模型（如gpt-image-2），适合高质量图片生成。
   - 不同服务提供商的模型命名与能力差异较大，建议根据需求选择合适模型。
 - 重试与退避
-  - 两阶段均实现最多3次重试，指数退避，有助于缓解瞬时抖动。
+  - 三阶段均实现最多3次重试，指数退避，有助于缓解瞬时抖动。
+  - 图像生成阶段设置较长超时时间（600秒），适应图片生成较长耗时。
 - 本地转写
   - Whisper模型越大，准确率越高但推理时间越长；可根据资源与质量需求选择small/medium等。
 - I/O与中间文件
-  - 关键帧、音频、转写文本、分析结果与生成文件均在output目录下，建议定期清理以节省空间。
+  - 关键帧、音频、转写文本、分析结果、生成文件与图像文件均在output目录下，建议定期清理以节省空间。
 - 网络与并发
   - 本项目为串行流程，不涉及并发调用；如需扩展，建议在API侧增加限流与幂等控制。
 - 帧采样优化
-  - 通过MAX_API_FRAMES配置控制发送给API的帧数，避免token过多和API限制。
+  - 通过MAX_API_FRAMES配置控制发送给多模态分析API的帧数，避免token过多和API限制。
 - 图像验证
   - 增强的JPEG文件验证和大小检查，提高API调用成功率。
+- 图像生成优化
+  - 支持批量页面处理，可指定页面范围减少处理时间。
+  - 默认尺寸1024x1792，平衡质量和生成速度。
 
-**更新** 新增了帧采样优化和图像验证机制，提高了系统的稳定性和性能。
+**更新** 新增了图像生成阶段的性能优化建议，包括超时设置、批量处理和尺寸优化。
 
 ## 故障排查指南
 - 缺少必要环境变量
   - 现象：模块直接报错并退出。
-  - 排查：确认config.env中API_BASE_URL、API_KEY、MODEL_NAME均已正确设置；或在运行环境中显式导出。
+  - 排查：确认config.env中API_BASE_URL、API_KEY、MODEL_NAME、IMAGE_API_BASE_URL、IMAGE_API_KEY、IMAGE_MODEL_NAME均已正确设置；或在运行环境中显式导出。
   - 参考
     - [analyze.py:215-218](file://analyze.py#L215-L218)
     - [generate.py:625-628](file://generate.py#L625-L628)
+    - [generate_image.py:333-335](file://generate_image.py#L333-L335)
 
 - API返回内容为空
   - 现象：抛出异常并记录原始返回，便于定位问题。
@@ -330,6 +414,7 @@ G --> P2["prompts/generate_prompt.md"]
   - 参考
     - [analyze.py:200-202](file://analyze.py#L200-L202)
     - [generate.py:82-84](file://generate.py#L82-L84)
+    - [generate_image.py:159-162](file://generate_image.py#L159-L162)
 
 - JSON解析失败
   - 现象：保存原始返回到analysis_raw.txt，便于人工核对。
@@ -338,12 +423,13 @@ G --> P2["prompts/generate_prompt.md"]
     - [analyze.py:254-263](file://analyze.py#L254-L263)
 
 - 未安装依赖库
-  - 现象：转写或分析阶段报错，提示未安装openai/openai-whisper。
+  - 现象：转写、分析或图像生成阶段报错，提示未安装openai/openai-whisper/requests。
   - 排查：执行requirements.txt安装依赖。
   - 参考
-    - [requirements.txt:1-4](file://requirements.txt#L1-L4)
+    - [requirements.txt:1-5](file://requirements.txt#L1-L5)
     - [transcribe.py:33-36](file://transcribe.py#L33-L36)
     - [analyze.py:139-140](file://analyze.py#L139-L140)
+    - [generate_image.py:23](file://generate_image.py#L23)
 
 - 生成HTML失败
   - 现象：生成Markdown成功但HTML失败，模块发出警告并继续。
@@ -369,10 +455,23 @@ G --> P2["prompts/generate_prompt.md"]
   - 参考
     - [analyze.py:227-236](file://analyze.py#L227-L236)
 
-**更新** 新增了帧文件验证失败和帧采样配置问题的故障排查指南。
+- 图像生成API调用失败
+  - 现象：图像生成阶段报错，API返回非200状态码或响应格式错误。
+  - 排查：检查IMAGE_API_BASE_URL是否正确、IMAGE_API_KEY是否有效、模型名是否匹配、参考图是否存在且为JPEG格式。
+  - 参考
+    - [generate_image.py:159-162](file://generate_image.py#L159-L162)
+    - [generate_image.py:221-226](file://generate_image.py#L221-L226)
+
+- 图片保存失败
+  - 现象：API调用成功但图片保存失败。
+  - 排查：检查输出目录权限、磁盘空间、响应格式是否为b64_json或url。
+  - 参考
+    - [generate_image.py:251-255](file://generate_image.py#L251-L255)
+
+**更新** 新增了图像生成API调用失败和图片保存失败的故障排查指南。
 
 ## 结论
-本项目的API配置围绕"环境变量 + Prompt模板"的模式展开，通过config.env集中管理API基础URL、密钥与模型名，并在运行脚本中统一注入。多模态分析与文本生成阶段均采用OpenAI兼容API，具备完善的重试与错误处理机制。本地转写使用Whisper模型，支持灵活的模型规模选择。**更新** 新版本增强了错误处理和验证机制，改进了依赖管理，新增了帧采样和图像验证功能，显著提升了系统的稳定性和用户体验。建议在生产环境中遵循安全最佳实践，合理选择API提供商与模型，并结合监控指标持续优化性能与稳定性。
+本项目的API配置围绕"环境变量 + Prompt模板"的模式展开，通过config.env集中管理API基础URL、密钥与模型名，并在运行脚本中统一注入。多模态分析、文本生成和图像生成三个阶段均采用OpenAI兼容API，具备完善的重试与错误处理机制。本地转写使用Whisper模型，支持灵活的模型规模选择。**更新** 新版本新增了完整的图像生成API配置支持，包括独立的generate_image.py脚本和完整的图像生成功能，显著扩展了项目的实用性和完整性。建议在生产环境中遵循安全最佳实践，合理选择API提供商与模型，并结合监控指标持续优化性能与稳定性。
 
 ## 附录
 
@@ -381,37 +480,34 @@ G --> P2["prompts/generate_prompt.md"]
   - 类型：字符串
   - 必填：是
   - 默认值：无
-  - 用途：OpenAI兼容API基础URL
+  - 用途：多模态分析阶段OpenAI兼容API基础URL
   - 参考
     - [config.env:2](file://config.env#L2)
     - [analyze.py:212](file://analyze.py#L212)
-    - [generate.py:622](file://generate.py#L622)
 
 - API_KEY
   - 类型：字符串
   - 必填：是
   - 默认值：无
-  - 用途：API鉴权密钥
+  - 用途：多模态分析阶段API鉴权密钥
   - 参考
     - [config.env:3](file://config.env#L3)
     - [analyze.py:213](file://analyze.py#L213)
-    - [generate.py:623](file://generate.py#L623)
 
 - MODEL_NAME
   - 类型：字符串
   - 必填：是
   - 默认值：无
-  - 用途：调用的模型名称
+  - 用途：多模态分析阶段调用的模型名称
   - 参考
     - [config.env:4](file://config.env#L4)
     - [analyze.py:214](file://analyze.py#L214)
-    - [generate.py:624](file://generate.py#L624)
 
 - GENERATE_API_BASE_URL（可选）
   - 类型：字符串
   - 必填：否
   - 默认值：无
-  - 用途：为生成阶段提供独立API基础URL
+  - 用途：为文本生成阶段提供独立API基础URL
   - 参考
     - [config.env:7-9](file://config.env#L7-L9)
     - [generate.py:622](file://generate.py#L622)
@@ -420,7 +516,7 @@ G --> P2["prompts/generate_prompt.md"]
   - 类型：字符串
   - 必填：否
   - 默认值：无
-  - 用途：为生成阶段提供独立API密钥
+  - 用途：为文本生成阶段提供独立API密钥
   - 参考
     - [config.env:7-9](file://config.env#L7-L9)
     - [generate.py:623](file://generate.py#L623)
@@ -429,10 +525,37 @@ G --> P2["prompts/generate_prompt.md"]
   - 类型：字符串
   - 必填：否
   - 默认值：无
-  - 用途：为生成阶段提供独立模型名
+  - 用途：为文本生成阶段提供独立模型名
   - 参考
     - [config.env:7-9](file://config.env#L7-L9)
     - [generate.py:624](file://generate.py#L624)
+
+- IMAGE_API_BASE_URL
+  - 类型：字符串
+  - 必填：是
+  - 默认值：https://api-slb.packyapi.com/v1/images/edits
+  - 用途：图像生成API基础URL，支持/images/edits端点
+  - 参考
+    - [config.env:19](file://config.env#L19)
+    - [generate_image.py:34](file://generate_image.py#L34)
+
+- IMAGE_API_KEY
+  - 类型：字符串
+  - 必填：是
+  - 默认值：无
+  - 用途：图像生成API鉴权密钥
+  - 参考
+    - [config.env:20](file://config.env#L20)
+    - [generate_image.py:35](file://generate_image.py#L35)
+
+- IMAGE_MODEL_NAME
+  - 类型：字符串
+  - 必填：是
+  - 默认值：gpt-image-2
+  - 用途：图像生成阶段调用的模型名称
+  - 参考
+    - [config.env:21](file://config.env#L21)
+    - [generate_image.py:36](file://generate_image.py#L36)
 
 - WHISPER_MODEL
   - 类型：字符串
@@ -447,24 +570,30 @@ G --> P2["prompts/generate_prompt.md"]
   - 类型：整数
   - 必填：否
   - 默认值：5
-  - 用途：控制发送给API的最大帧数
+  - 用途：控制发送给多模态分析API的最大帧数
   - 参考
     - [config.env:16](file://config.env#L16)
     - [analyze.py:227](file://analyze.py#L227)
 
-**更新** 新增了MAX_API_FRAMES配置项，用于控制多模态分析阶段发送给API的关键帧数量。
+**更新** 新增了图像生成API配置项，包括IMAGE_API_BASE_URL、IMAGE_API_KEY、IMAGE_MODEL_NAME等新配置项。
 
 ### OpenAI兼容API与其他第三方服务配置要点
 - 基础URL与版本
   - 多数兼容服务会在基础URL后附加版本号（如/v1），请确保config.env中的API_BASE_URL与服务端一致。
+  - 图像生成API需支持/images/edits端点和multipart/form-data上传。
 - 模型名称
   - 不同服务提供商的模型命名差异较大，务必与服务端可用模型一致。
+  - 多模态分析使用文本模型（如gpt-5.5），图像生成使用专门的图像模型（如gpt-image-2）。
 - 认证方式
   - 多数兼容服务仍使用API-Key认证；请确保API_KEY正确且未过期。
 - 速率限制与配额
   - 建议在调用前评估服务端速率限制与配额，必要时在应用侧增加限流与排队策略。
 - 代理与网络
   - 如需通过代理访问，请确保代理配置正确，避免DNS污染或网络超时。
+- 图像生成特殊要求
+  - 确保API支持/images/edits端点和multipart/form-data格式。
+  - 支持b64_json和url两种响应格式。
+  - 提供适当的超时设置以适应较长的生成时间。
 
 ### 付费API与免费API选择建议
 - 付费API
@@ -475,6 +604,9 @@ G --> P2["prompts/generate_prompt.md"]
   - 适用场景：开发测试、小规模验证。
 - 建议
   - 在开发阶段可使用免费API快速验证流程；进入生产前切换至付费服务并开启监控与告警。
+- 图像生成API选择
+  - 图像生成API通常比文本API更昂贵，建议根据预算选择合适的提供商。
+  - 考虑API的生成速度、质量、并发限制等因素。
 
 ### API密钥安全管理最佳实践
 - 使用环境变量
@@ -482,27 +614,35 @@ G --> P2["prompts/generate_prompt.md"]
 - CI/CD机密
   - 在CI/CD流水线中使用机密变量存储API_KEY，避免日志泄露。
 - 最小权限原则
-  - 为不同阶段（分析/生成）配置独立的API密钥与模型，降低风险面。
+  - 为不同阶段（分析/生成/图像生成）配置独立的API密钥与模型，降低风险面。
 - 定期轮换
   - 建议定期更换API_KEY，防止长期暴露带来的风险。
 - 日志脱敏
   - 避免在日志中打印API_KEY；如需调试，使用脱敏后的部分字符。
+- 多租户隔离
+  - 为多用户或多项目配置独立的API密钥，便于审计和控制成本。
 
 ### API超时设置、重试机制与错误处理配置
 - 超时设置
-  - 当前实现未显式设置HTTP超时；如需增强稳定性，可在客户端初始化时配置超时参数。
+  - 多模态分析API：默认无显式超时设置。
+  - 文本生成API：默认无显式超时设置。
+  - 图像生成API：设置600秒超时，适应较长的生成时间。
 - 重试机制
-  - 两阶段均实现最多3次重试，指数退避（2^attempt-1秒）。
+  - 三阶段均实现最多3次重试，指数退避（2^attempt-1秒）。
 - 错误处理
-  - 缺少必要变量、返回空内容、JSON解析失败、依赖库缺失等均有明确报错与回退策略。
+  - 缺少必要变量、返回空内容、JSON解析失败、依赖库缺失、API调用失败等均有明确报错与回退策略。
 - 建议
   - 在API侧增加幂等标识与重试窗口，避免重复消费；在应用侧记录重试次数与延迟，便于监控。
+- 图像生成特殊处理
+  - 支持b64_json和url两种响应格式的兼容处理。
+  - 自动处理base64解码和URL下载。
 
-**更新** 增强了错误处理和验证机制，提供了更详细的错误报告和故障排查指南。
+**更新** 增强了错误处理和验证机制，提供了更详细的错误报告和故障排查指南，新增了图像生成API的特殊处理机制。
 
 **章节来源**
 - [analyze.py:190-208](file://analyze.py#L190-L208)
 - [generate.py:72-90](file://generate.py#L72-L90)
+- [generate_image.py:39-41](file://generate_image.py#L39-L41)
 
 ### API性能优化建议与监控指标
 - 性能优化建议
@@ -511,12 +651,16 @@ G --> P2["prompts/generate_prompt.md"]
   - 并发与限流：在API侧设置合理的并发与限流，避免突发流量冲击。
   - 帧采样优化：合理设置MAX_API_FRAMES，平衡质量和性能。
   - 图像验证：利用JPEG魔术字节检查和大小限制，提高API调用成功率。
+  - 批量处理：图像生成支持批量页面处理，可指定页面范围减少处理时间。
+  - 尺寸优化：合理设置图像尺寸，在质量和速度间取得平衡。
 - 监控指标建议
   - 响应时间：平均响应时间、P95/P99延迟。
   - 成功率：API调用成功率、重试次数分布。
-  - 错误类型：空响应、解析失败、依赖缺失等分类统计。
+  - 错误类型：空响应、解析失败、依赖缺失、API调用失败等分类统计。
   - 资源使用：CPU/内存占用、I/O吞吐量。
   - 成本：按调用次数与Token数统计费用。
   - 帧处理：关键帧数量、采样效率、图像验证成功率。
+  - 图像生成：生成时间、成功率、失败原因分类、成本统计。
+  - 并发监控：同时进行的API调用数量、队列长度、等待时间。
 
-**更新** 新增了帧采样优化和图像验证的性能优化建议，以及相应的监控指标。
+**更新** 新增了图像生成阶段的性能优化建议和监控指标，包括生成时间、成功率和成本统计等。

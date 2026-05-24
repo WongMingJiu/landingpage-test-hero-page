@@ -15,7 +15,7 @@
 以下是从 10 张真实兴趣岛唱歌课程落地页中总结的常见布局模板，你可以参考、混搭或创新：
 
 ### 模板 A：卖点徽章型
-- 顶部品牌栏 → 大标题 → 效果徽章（圆形/胶囊，2-4字短词如"上高音""气息稳"）→ 老师半身照（右侧）→ 痛点列表 → 底部承诺条
+- 顶部品牌栏（使用提供的品牌 logo 参考图，原样保持其设计风格、颜色和文字排版）→ 大标题 → 效果徽章（圆形/胶囊，2-4字短词如"上高音""气息稳"）→ 老师半身照（右侧）→ 痛点列表 → 底部承诺条
 - 配色：浅暖底 + 绿色/红色强调
 - 适合强调教学效果
 
@@ -42,7 +42,7 @@
 你也可以**不限于以上模板**，根据分析数据自由创作新布局。
 
 ## 固定元素（每套方案都必须包含）
-1. **品牌标识栏**（顶部）：红色渐变条 + 兴趣岛 logo + "学唱歌就上兴趣岛" + "名师更多·课程更全"
+1. **品牌标识栏**（顶部）：使用提供的品牌 logo 参考图（brand_logo.png），原样保持其红色背景、"兴趣岛"白色大字、"兴趣学堂"小字、以及"学唱歌就上兴趣岛"tagline 的布局。不要让 AI 重新渲染品牌文字，直接参考品牌 logo 图片的设计。
 2. **老师形象**：基于视频中的外观描述，半身照
 3. **老师姓名 + 头衔**：
    - 如果分析数据中 `teacher.title` 有值（视频中明确提及），则所有变体统一使用该头衔
@@ -104,7 +104,7 @@ analysis_json
 1. 英文撰写，可直接用于 gpt-image2
 2. 尺寸：竖版 1080x1920
 3. 必须包含中文文案渲染指令（列出每个文字元素及位置）
-4. 必须包含品牌栏描述
+4. 必须包含品牌栏描述（品牌区域使用提供的品牌 logo 参考图 brand_logo.png，原样保持其红色背景、文字排版和配色，不要让 AI 自行渲染品牌文字）
 5. 包含老师形象描述
 6. 包含装饰元素（音符、光效等）
 7. 底部承诺条使用强视觉色彩但非按钮
@@ -114,7 +114,7 @@ analysis_json
 ### 每套 Prompt 的中文文字清单格式：
 ```
 Chinese text to render:
-- Brand bar: "兴趣岛" + "兴趣学堂" | "学唱歌就上兴趣岛" | "名师更多·课程更全"
+- Brand bar: "兴趣岛兴趣学堂" (wordmark text logo, no graphical icon) | tagline: "学唱歌就上兴趣岛" | "名师更多·课程更全"
 - Headline: "XXX"
 - Subtitle: "XXX"
 - Teacher name: "XXX"
@@ -125,5 +125,5 @@ Chinese text to render:
 
 IMPORTANT: When using any of these prompts, attach the following reference images:
 1. "output/teacher_ref.jpg" - teacher appearance reference
-2. "assets/brand_reference.png" - brand bar style reference
+2. "assets/brand_logo.png" - brand logo bar reference (use exactly as-is for the top brand bar area)
 3. Optionally attach 1-2 images from "assets/examples/" as overall style reference

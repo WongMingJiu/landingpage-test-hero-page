@@ -3,7 +3,7 @@
 """
 落地页生图脚本
 读取 ~/workspace/landing-page-manage/唱歌项目/{视频名}/pageN/ 中的 prompt.md 和参考图，
-调用 gpt-image-2 API 生成落地页图片，保存到 landing-page/{视频名}/pageN/result.png
+调用 gpt-image-2 API 生成落地页图片，保存到 landing-page/{视频名}/pageN.png
 
 使用方式：
   python3 generate_image.py "视频名称"
@@ -25,6 +25,7 @@ import requests
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 CONFIG_PATH = SCRIPT_DIR / "config.env"
+BRAND_LOGO_PATH = SCRIPT_DIR / "assets" / "brand_logo.png"
 
 # 默认输入/输出根目录
 DEFAULT_INPUT_ROOT = Path.home() / "workspace" / "landing-page-manage" / "唱歌项目"
@@ -132,11 +133,11 @@ def call_image_edit_api(
     api_key: str,
     model: str,
     prompt_text: str,
-    image_path: Path,
+    image_paths: List[Path],
     size: str,
     n: int = 1,
 ) -> dict:
-    """发送 multipart/form-data POST 请求到 /images/edits"""
+    """发送 multipart/form-data POST 请求到 /images/edits，支持多张参考图"""
     headers = {"Authorization": f"Bearer {api_key}"}
     data = {
         "model": model,
@@ -144,17 +145,27 @@ def call_image_edit_api(
         "n": str(n),
         "size": size,
     }
-    with open(image_path, "rb") as fimg:
-        files = {
-            "image": (image_path.name, fimg, "image/jpeg"),
-        }
+
+    # 打开所有图片文件
+    opened_files = []
+    try:
+        files_list = []
+        for img_path in image_paths:
+            f = open(img_path, "rb")
+            opened_files.append(f)
+            mime = "image/png" if img_path.suffix.lower() == ".png" else "image/jpeg"
+            files_list.append(("image[]", (img_path.name, f, mime)))
+
         resp = requests.post(
             api_url,
             headers=headers,
             data=data,
-            files=files,
+            files=files_list,
             timeout=REQUEST_TIMEOUT,
         )
+    finally:
+        for f in opened_files:
+            f.close()
 
     if resp.status_code != 200:
         raise RuntimeError(
@@ -171,7 +182,7 @@ def call_with_retry(
     api_key: str,
     model: str,
     prompt_text: str,
-    image_path: Path,
+    image_paths: List[Path],
     size: str,
     max_retries: int = MAX_RETRIES,
 ) -> dict:
@@ -183,7 +194,7 @@ def call_with_retry(
                 api_key=api_key,
                 model=model,
                 prompt_text=prompt_text,
-                image_path=image_path,
+                image_paths=image_paths,
                 size=size,
                 n=1,
             )
@@ -202,7 +213,7 @@ def call_with_retry(
 
 def process_page(
     page_dir: Path,
-    output_dir: Path,
+    output_path: Path,
     api_url: str,
     api_key: str,
     model: str,
@@ -212,23 +223,34 @@ def process_page(
     page_name = page_dir.name
     print(f"\n[{page_name}] 开始处理")
 
-    prompt_md = page_dir / "prompt.md"
+    # 兼容 prompt.md 和 prompt.txt 两种格式
+    prompt_file = page_dir / "prompt.md"
+    if not prompt_file.exists():
+        prompt_file = page_dir / "prompt.txt"
     teacher_ref = page_dir / "teacher_ref.jpg"
 
-    if not prompt_md.exists():
-        print(f"  x 缺少 prompt.md：{prompt_md}")
+    if not prompt_file.exists():
+        print(f"  x 缺少 prompt.md 或 prompt.txt：{page_dir}")
         return False
     if not teacher_ref.exists():
         print(f"  x 缺少 teacher_ref.jpg：{teacher_ref}")
         return False
 
-    prompt_text = read_prompt_text(prompt_md)
+    prompt_text = read_prompt_text(prompt_file)
     if not prompt_text:
-        print(f"  x prompt.md 为空：{prompt_md}")
+        print(f"  x prompt 文件为空：{prompt_file}")
         return False
 
+    # 构建参考图列表：老师参考图 + 品牌 logo
+    image_paths = [teacher_ref]
+    if BRAND_LOGO_PATH.exists():
+        image_paths.append(BRAND_LOGO_PATH)
+        print(f"  - 品牌 logo：{BRAND_LOGO_PATH}")
+    else:
+        print(f"  ! 品牌 logo 不存在，仅使用老师参考图：{BRAND_LOGO_PATH}")
+
     print(f"  - prompt 长度：{len(prompt_text)} 字符")
-    print(f"  - 参考图：{teacher_ref}")
+    print(f"  - 参考图：{[str(p) for p in image_paths]}")
     print(f"  - 调用 API（model={model}, size={size}）...")
 
     try:
@@ -237,14 +259,13 @@ def process_page(
             api_key=api_key,
             model=model,
             prompt_text=prompt_text,
-            image_path=teacher_ref,
+            image_paths=image_paths,
             size=size,
         )
     except Exception as e:
         print(f"  x API 调用失败：{e}")
         return False
 
-    output_path = output_dir / "result.png"
     try:
         save_image_from_response(resp_json, output_path)
     except Exception as e:
@@ -367,11 +388,11 @@ def main() -> int:
     success = 0
     failed = 0
     for page_dir in pages:
-        out_page_dir = output_video_dir / page_dir.name
+        out_page_path = output_video_dir / f"{page_dir.name}.png"
         try:
             ok = process_page(
                 page_dir=page_dir,
-                output_dir=out_page_dir,
+                output_path=out_page_path,
                 api_url=api_url,
                 api_key=api_key,
                 model=model,
