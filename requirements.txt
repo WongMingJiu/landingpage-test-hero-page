@@ -1,3 +1,4 @@
 openai>=1.0.0
 openai-whisper>=20231117
 markdown>=3.5
+requests>=2.28.0
