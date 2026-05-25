@@ -96,6 +96,52 @@
 - 优先选能看清老师**服装/着装**的帧
 - 输出帧编号（如 frame_00 ~ frame_14）和选择理由
 
+# 设计思路增强维度（建议提取）
+
+以下 5 个维度用于支撑后续生成环节中的"设计思路详解"输出（视觉布局/色彩字体/文案策略/用户心理四维框架）。请尽量从视频帧+口播中提取，**若信息不足，允许基于经验合理推断**，并在必要时通过措辞体现"推断"性质。
+
+## 12. 视觉构图分析 (visual_composition)
+从所有关键帧中归纳视频整体的画面组织方式：
+- `layout_pattern`：视频中的主要布局模式描述（例如"品牌栏在顶部 + 大标题居中 + 老师形象位于右侧""左文右人""上图下字"等）
+- `information_hierarchy`：信息呈现的优先级顺序（按用户视线落点先后排列，如：品牌Logo → 主标题 → 老师人物 → 痛点文字 → CTA）
+- `visual_rhythm`：视觉节奏特征，包括镜头/画面切换频率、元素出现顺序、动静对比等
+- `whitespace_usage`：留白策略描述（紧凑型/通透型/局部留白等，以及留白集中的区域）
+- `visual_density`：整体信息密度评估，仅取以下三档之一："高" / "中" / "低"
+
+## 13. 色彩心理与对比分析 (color_psychology)
+基于第 1 维度提取的色彩，进一步分析色彩的心理与适老化表现：
+- `primary_emotion`：主色调传达的情绪关键词（温暖、信任、活力、专业、亲和、踏实等，可多选）
+- `contrast_assessment`：色彩对比度评估，需明确说明是否适合 50-70 岁中老年用户的视力特征（如"主辅色对比强烈，文字与背景区分清晰，适合中老年阅读"）
+- `color_brand_relation`：色彩与品牌形象/课程调性的关联说明
+- `age_appropriateness`：色彩搭配是否适合 50-70 岁目标用户（适合/部分适合/不适合 + 简要理由）
+
+## 14. 字体与排版特征 (typography)
+从画面文字/字幕中归纳字体与排版规律：
+- `text_size_hierarchy`：视频中标题、副标题、正文之间的相对大小关系（如"主标题 ≈ 副标题的 1.8 倍，正文最小"）
+- `text_weight_characteristics`：文字粗细特征（标题加粗、正文常规、关键词描边/高亮等）
+- `layout_style`：排版风格（居中对齐 / 左对齐 / 上下分栏 / 图文环绕等）
+- `readability_notes`：适老化可读性特征（字号大小、行距、字重、与背景的对比等是否便于中老年阅读）
+
+## 15. 文案链路与情感分析 (copy_strategy)
+本维度是对前述 `pain_points` / `selling_points` / `benefits` 的**扩展**：
+- 在每条痛点/卖点/利益点的原有结构（scenario/reason/content/short_form/source）基础上，**新增以下两个字段**：
+  - `emotional_tone`：情感基调（焦虑 / 共鸣 / 无奈 / 信任 / 向往 / 专业 / 安心 / 期待 等，可多选）
+  - `why_chosen`：为什么选择这条而非其他候选项（简要理由，例如"该痛点在口播中被反复提及且最贴近中老年学唱歌真实场景"）
+- 另在 `copy_strategy` 顶层新增：
+  - `transformation_chain`：用一段文字说明"痛点 → 卖点 → 利益点"的完整推导链路（即用户从问题被点中、看到解法、到想象成果的心理路径）
+  - `dominant_emotion`：整体文案的主导情感基调（一个或两个最核心的情绪关键词）
+
+## 16. 用户心理与转化洞察 (user_psychology)
+站在 50-70 岁中老年目标用户视角，结合视频内容推导：
+- `primary_concerns`：目标用户的核心顾虑列表（如"是否真的零基础也能学会""手机操作复杂""花钱怕没效果""时间精力是否够用"等）
+- `trust_signals`：视频中体现的信任机制（名师头衔、教学方法体系名、学员效果展示、机构权威性、媒体背书等）
+- `decision_barriers`：用户决策的潜在障碍**及视频中如何消除该障碍**（每条包含障碍描述 + 消除方式）
+- `aida_touchpoints`：AIDA 模型各阶段在视频中的触发点
+  - `attention`：吸引注意的元素（开场画面、字幕钩子、音乐节奏等）
+  - `interest`：激发兴趣的内容（独特方法、痛点共鸣、效果承诺等）
+  - `desire`：建立欲望的机制（成果可视化、社会认同、稀缺性、权威背书等）
+  - `action`：推动行动的信号（CTA 文案、限时/限量提示、低门槛承诺等）
+
 # 输出格式
 
 严格按以下 JSON 格式输出，不要添加任何额外文字：
@@ -125,6 +171,8 @@
       "scenario": "具体场景描述",
       "reason": "原因",
       "short_form": "≤6字精简版",
+      "emotional_tone": ["焦虑", "共鸣"],
+      "why_chosen": "为什么选择这条而非其他候选项",
       "source": "visual/audio/both"
     }
   ],
@@ -132,12 +180,16 @@
     {
       "content": "卖点描述",
       "short_form": "≤4字精简版",
+      "emotional_tone": ["专业", "信任"],
+      "why_chosen": "为什么选择这条而非其他候选项",
       "source": "visual/audio/both"
     }
   ],
   "benefits": [
     {
       "content": "利益点描述",
+      "emotional_tone": ["向往", "期待"],
+      "why_chosen": "为什么选择这条而非其他候选项",
       "source": "visual/audio/both"
     }
   ],
@@ -158,6 +210,45 @@
   "best_teacher_frame": {
     "frame": "frame_02",
     "reason": "该帧中老师正面朝向镜头、表情自然、形象最清晰完整"
+  },
+  "visual_composition": {
+    "layout_pattern": "视频中主要的画面布局描述",
+    "information_hierarchy": ["品牌Logo", "主标题", "老师人物", "痛点文字", "CTA"],
+    "visual_rhythm": "视觉节奏特征描述",
+    "whitespace_usage": "留白策略描述",
+    "visual_density": "高/中/低"
+  },
+  "color_psychology": {
+    "primary_emotion": ["温暖", "信任"],
+    "contrast_assessment": "色彩对比度评估，是否适合中老年视力",
+    "color_brand_relation": "色彩与品牌的关联说明",
+    "age_appropriateness": "适合/部分适合/不适合 + 简要理由"
+  },
+  "typography": {
+    "text_size_hierarchy": "标题/副标题/正文相对大小关系描述",
+    "text_weight_characteristics": "字体粗细特征描述",
+    "layout_style": "居中对齐/左对齐/上下分栏等",
+    "readability_notes": "适老化可读性特征描述"
+  },
+  "copy_strategy": {
+    "transformation_chain": "痛点→卖点→利益点的完整推导链路（一段文字说明）",
+    "dominant_emotion": ["共鸣", "向往"]
+  },
+  "user_psychology": {
+    "primary_concerns": ["核心顾虑1", "核心顾虑2"],
+    "trust_signals": ["名师头衔", "教学方法体系名", "学员效果展示"],
+    "decision_barriers": [
+      {
+        "barrier": "障碍描述",
+        "resolution": "视频中如何消除该障碍"
+      }
+    ],
+    "aida_touchpoints": {
+      "attention": "吸引注意的元素描述",
+      "interest": "激发兴趣的内容描述",
+      "desire": "建立欲望的机制描述",
+      "action": "推动行动的信号描述"
+    }
   }
 }
 ```
