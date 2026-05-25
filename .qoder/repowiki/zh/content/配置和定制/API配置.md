@@ -20,6 +20,7 @@
 - 扩展多参考图像支持，增强图像生成的参考素材能力
 - 新增向后兼容的prompt文件支持，兼容prompt.txt格式
 - 更新API配置包括品牌logo路径常量(BRAND_LOGO_PATH)和多图像处理能力
+- **重要更新**：图像生成模块DEFAULT_SIZE从1024x1792调整为1024x1536，新增智能缩放功能（resize_to_target函数），以及Pillow库依赖升级至10.0.0版本
 
 ## 目录
 1. [简介](#简介)
@@ -36,7 +37,7 @@
 ## 简介
 本文件面向需要在本项目中配置和使用API的用户，系统性说明config.env中的API相关配置项，以及这些配置在多模态分析、文本生成与图像生成三个阶段中的作用与设置方法。文档同时提供OpenAI兼容API及其他第三方服务的配置要点、安全最佳实践、重试与错误处理策略、性能优化建议与监控指标建议，帮助您在不同API提供商之间进行选择与迁移。
 
-**更新** 本版本新增了品牌logo引用系统和多参考图像支持，扩展了项目功能的完整性和实用性。
+**更新** 本版本新增了品牌logo引用系统和多参考图像支持，扩展了项目功能的完整性和实用性。**重要更新** 图像生成模块的尺寸优化和智能缩放功能显著改善了移动端图片显示质量和一致性。
 
 ## 项目结构
 项目采用"脚本驱动 + 环境变量 + Prompt模板"的分层设计，现已扩展为包含多模态分析、文本生成、图像生成和品牌logo引用的完整工作流程：
@@ -152,7 +153,13 @@ M --> E
   - 使用范围：生成HTML参考页面时展示品牌栏样式。
   - 注意事项：文件必须存在，用于指导AI生成正确的品牌栏样式。
 
-**更新** 新增了品牌logo引用系统相关配置项，包括BRAND_LOGO_PATH、TEACHER_REF_PATH和BRAND_REFERENCE_SRC，扩展了项目的品牌一致性保障能力。
+- **重要更新** DEFAULT_SIZE
+  - 作用：图像生成的默认尺寸，现为1024x1536（竖版1080x1920），优化移动端显示效果。
+  - 设置位置：generate_image.py中定义，支持1024x1024、1536x1024、1024x1536等标准尺寸。
+  - 使用范围：图像生成阶段作为初始生成尺寸。
+  - 注意事项：生成后会通过智能缩放功能调整到750x1200的目标尺寸。
+
+**更新** 新增了品牌logo引用系统相关配置项，包括BRAND_LOGO_PATH、TEACHER_REF_PATH和BRAND_REFERENCE_SRC，扩展了项目的品牌一致性保障能力。**重要更新** 新增了DEFAULT_SIZE配置项，优化了移动端图片显示质量。
 
 **章节来源**
 - [config.env:1-22](file://config.env#L1-L22)
@@ -196,6 +203,7 @@ SH->>GI : 执行图像生成
 GI->>GI : 检测品牌logo文件
 GI->>IA : 调用图像API IMAGE_API_BASE_URL/IMAGE_API_KEY/IMAGE_MODEL_NAME
 IA-->>GI : 返回生成的图片
+GI->>GI : 智能缩放至750x1200目标尺寸
 GI-->>SH : 保存生成的落地页图片
 SH-->>U : 输出完整产物
 ```
@@ -306,11 +314,12 @@ GE-->>GE : 保存 Markdown 与 HTML
 - 关键配置项
   - IMAGE_API_BASE_URL、IMAGE_API_KEY、IMAGE_MODEL_NAME：从环境变量读取，用于构建客户端与发起请求。
   - 支持命令行参数覆盖：--url、--key、--model、--size。
-  - 默认尺寸：1024x1792（竖版1080x1920）。
+  - **重要更新** 默认尺寸：1024x1536（竖版1080x1920），优化移动端显示效果。
   - 重试机制：最多3次，指数退避（2^attempt-1秒）。
   - 超时设置：600秒，适应图像生成较长耗时。
   - 品牌logo支持：自动检测assets/brand_logo.png并作为参考图。
   - 多参考图像：支持多张参考图（包括品牌logo和老师参考图）。
+  - **重要更新** 智能缩放功能：resize_to_target函数实现等比缩放和高度限制。
 - 错误处理
   - 缺少必要环境变量时直接报错退出。
   - API响应格式兼容：支持b64_json和url两种返回格式。
@@ -318,7 +327,7 @@ GE-->>GE : 保存 Markdown 与 HTML
   - 页面过滤：支持指定页面编号列表处理。
   - 品牌logo缺失：仅使用老师参考图继续处理。
 
-**更新** 新增了完整的图像生成API配置支持，包括独立的generate_image.py脚本、品牌logo引用系统、多参考图像支持和增强的错误处理机制。
+**重要更新** 新增了完整的图像生成API配置支持，包括独立的generate_image.py脚本、品牌logo引用系统、多参考图像支持、智能缩放功能和增强的错误处理机制。DEFAULT_SIZE从1024x1792调整为1024x1536，显著改善了移动端图片显示质量。
 
 ```mermaid
 flowchart TD
@@ -338,7 +347,8 @@ CheckBrandLogo --> |不存在| UseTeacherOnly["仅使用老师参考图"]
 AddBrandRef --> CallAPI["调用图像API最多3次"]
 UseTeacherOnly --> CallAPI
 CallAPI --> SaveImage["保存图片<br/>支持b64_json或url"]
-SaveImage --> NextPage["处理下一个页面"]
+SaveImage --> Resize["智能缩放至750x1200目标尺寸"]
+Resize --> NextPage["处理下一个页面"]
 NextPage --> Done{"还有页面吗？"}
 Done --> |是| ProcessPage
 Done --> |否| End(["结束"])
@@ -349,9 +359,10 @@ Done --> |否| End(["结束"])
 - [generate_image.py:203-258](file://generate_image.py#L203-L258)
 - [generate_image.py:130-167](file://generate_image.py#L130-L167)
 - [generate_image.py:244-250](file://generate_image.py#L244-L250)
+- [generate_image.py:136-152](file://generate_image.py#L136-L152)
 
 **章节来源**
-- [generate_image.py:1-398](file://generate_image.py#L1-L398)
+- [generate_image.py:1-448](file://generate_image.py#L1-L448)
 
 ### 本地转写模块（transcribe.py）
 - 功能概述
@@ -393,7 +404,7 @@ SaveText --> End(["结束"])
   - generate.py与generate_image.py共享assets目录下的品牌资源文件。
   - generate.py生成品牌参考HTML页面，generate_image.py使用品牌logo文件。
 
-**更新** 依赖管理更加严格，新增了对图像生成API的requests库依赖和品牌资源的共享机制。
+**更新** 依赖管理更加严格，新增了对图像生成API的requests库依赖和品牌资源的共享机制。**重要更新** Pillow库升级至10.0.0版本，提供更好的图像处理能力。
 
 ```mermaid
 graph TB
@@ -406,6 +417,7 @@ A --> O["openai 库"]
 G --> O
 GI --> REQ["requests 库"]
 T --> W["openai-whisper 库"]
+GI --> PIL["Pillow>=10.0.0"]
 A --> P1["prompts/analyze_prompt.md"]
 G --> P2["prompts/generate_prompt.md"]
 G --> BR["assets/brand_reference.png"]
@@ -414,13 +426,13 @@ GI --> BL["assets/brand_logo.png"]
 
 **图表来源**
 - [run.sh:42-52](file://run.sh#L42-L52)
-- [requirements.txt:1-5](file://requirements.txt#L1-L5)
+- [requirements.txt:1-6](file://requirements.txt#L1-L6)
 - [prompts/analyze_prompt.md:1-153](file://prompts/analyze_prompt.md#L1-L153)
 - [prompts/generate_prompt.md:1-130](file://prompts/generate_prompt.md#L1-L130)
 
 **章节来源**
 - [run.sh:42-52](file://run.sh#L42-L52)
-- [requirements.txt:1-5](file://requirements.txt#L1-L5)
+- [requirements.txt:1-6](file://requirements.txt#L1-L6)
 
 ## 性能考虑
 - 模型选择
@@ -442,13 +454,15 @@ GI --> BL["assets/brand_logo.png"]
   - 增强的JPEG文件验证和大小检查，提高API调用成功率。
 - 图像生成优化
   - 支持批量页面处理，可指定页面范围减少处理时间。
-  - 默认尺寸1024x1792，平衡质量和生成速度。
+  - **重要更新** 默认尺寸1024x1536，优化移动端显示效果，平衡质量和生成速度。
   - 多参考图像支持，提升生成质量的一致性。
+  - **重要更新** 智能缩放功能确保生成图片符合750x1200的目标尺寸，提升移动端显示质量。
 - 品牌一致性优化
   - 品牌logo自动检测和引用，确保生成图片的品牌栏样式一致性。
   - 品牌参考HTML页面辅助设计师理解品牌规范。
+- **重要更新** Pillow库升级至10.0.0版本，提供更好的图像处理算法和性能优化。
 
-**更新** 新增了图像生成阶段的性能优化建议，包括超时设置、批量处理、尺寸优化和品牌一致性保障。
+**更新** 新增了图像生成阶段的性能优化建议，包括超时设置、批量处理、尺寸优化和品牌一致性保障。**重要更新** 新增了Pillow库升级的性能优化说明。
 
 ## 故障排查指南
 - 缺少必要环境变量
@@ -477,7 +491,7 @@ GI --> BL["assets/brand_logo.png"]
   - 现象：转写、分析或图像生成阶段报错，提示未安装openai/openai-whisper/requests。
   - 排查：执行requirements.txt安装依赖。
   - 参考
-    - [requirements.txt:1-5](file://requirements.txt#L1-L5)
+    - [requirements.txt:1-6](file://requirements.txt#L1-L6)
     - [transcribe.py:33-36](file://transcribe.py#L33-L36)
     - [analyze.py:139-140](file://analyze.py#L139-L140)
     - [generate_image.py:23](file://generate_image.py#L23)
@@ -537,10 +551,22 @@ GI --> BL["assets/brand_logo.png"]
   - 参考
     - [generate.py:587-590](file://generate.py#L587-L590)
 
-**更新** 新增了品牌logo文件缺失、品牌参考图复制失败和向后兼容的prompt文件处理等故障排查指南。
+- **重要更新** 智能缩放功能异常
+  - 现象：生成图片尺寸不符合预期，移动端显示效果不佳。
+  - 排查：检查resize_to_target函数是否正常执行，确认Pillow库版本为10.0.0或更高版本。
+  - 参考
+    - [generate_image.py:136-152](file://generate_image.py#L136-L152)
+
+- **重要更新** Pillow库版本问题
+  - 现象：图像处理功能异常或性能不佳。
+  - 排查：确认requirements.txt中Pillow版本为10.0.0或更高，重新安装依赖。
+  - 参考
+    - [requirements.txt:5](file://requirements.txt#L5)
+
+**更新** 新增了品牌logo文件缺失、品牌参考图复制失败和向后兼容的prompt文件处理等故障排查指南。**重要更新** 新增了智能缩放功能异常和Pillow库版本问题的故障排查指南。
 
 ## 结论
-本项目的API配置围绕"环境变量 + Prompt模板"的模式展开，通过config.env集中管理API基础URL、密钥与模型名，并在运行脚本中统一注入。多模态分析、文本生成和图像生成三个阶段均采用OpenAI兼容API，具备完善的重试与错误处理机制。本地转写使用Whisper模型，支持灵活的模型规模选择。**更新** 新版本新增了完整的图像生成API配置支持、品牌logo引用系统和多参考图像支持，显著扩展了项目的实用性和完整性。新增的品牌一致性保障机制确保生成图片的品牌栏样式统一，多参考图像支持提升了生成质量。建议在生产环境中遵循安全最佳实践，合理选择API提供商与模型，并结合监控指标持续优化性能与稳定性。
+本项目的API配置围绕"环境变量 + Prompt模板"的模式展开，通过config.env集中管理API基础URL、密钥与模型名，并在运行脚本中统一注入。多模态分析、文本生成和图像生成三个阶段均采用OpenAI兼容API，具备完善的重试与错误处理机制。本地转写使用Whisper模型，支持灵活的模型规模选择。**更新** 新版本新增了完整的图像生成API配置支持、品牌logo引用系统和多参考图像支持，显著扩展了项目的实用性和完整性。**重要更新** 新版本的图像生成模块通过DEFAULT_SIZE调整和智能缩放功能，显著改善了移动端图片显示质量和一致性。Pillow库升级至10.0.0版本，提供了更好的图像处理能力和性能优化。建议在生产环境中遵循安全最佳实践，合理选择API提供商与模型，并结合监控指标持续优化性能与稳定性。
 
 ## 附录
 
@@ -650,7 +676,7 @@ GI --> BL["assets/brand_logo.png"]
   - 默认值：assets/brand_logo.png
   - 用途：品牌logo文件路径，用于图像生成阶段的品牌一致性保障
   - 参考
-    - [generate_image.py:28](file://generate_image.py#L28)
+    - [generate_image.py:29](file://generate_image.py#L29)
 
 - TEACHER_REF_PATH
   - 类型：字符串（路径）
@@ -668,7 +694,15 @@ GI --> BL["assets/brand_logo.png"]
   - 参考
     - [generate.py:46](file://generate.py#L46)
 
-**更新** 新增了品牌logo引用系统相关配置项，包括BRAND_LOGO_PATH、TEACHER_REF_PATH和BRAND_REFERENCE_SRC，扩展了项目的品牌一致性保障能力。
+- **重要更新** DEFAULT_SIZE
+  - 类型：字符串
+  - 必填：否
+  - 默认值：1024x1536
+  - 用途：图像生成的默认尺寸，优化移动端显示效果
+  - 参考
+    - [generate_image.py:41](file://generate_image.py#L41)
+
+**更新** 新增了品牌logo引用系统相关配置项，包括BRAND_LOGO_PATH、TEACHER_REF_PATH和BRAND_REFERENCE_SRC，扩展了项目的品牌一致性保障能力。**重要更新** 新增了DEFAULT_SIZE配置项，优化了移动端图片显示质量。
 
 ### OpenAI兼容API与其他第三方服务配置要点
 - 基础URL与版本
@@ -688,6 +722,7 @@ GI --> BL["assets/brand_logo.png"]
   - 支持b64_json和url两种响应格式。
   - 提供适当的超时设置以适应较长的生成时间。
   - 支持多参考图像上传，提升生成质量一致性。
+  - **重要更新** 支持1024x1024、1536x1024、1024x1536等标准尺寸，优化移动端显示效果。
 
 ### 付费API与免费API选择建议
 - 付费API
@@ -702,6 +737,7 @@ GI --> BL["assets/brand_logo.png"]
   - 图像生成API通常比文本API更昂贵，建议根据预算选择合适的提供商。
   - 考虑API的生成速度、质量、并发限制等因素。
   - 优先选择支持多参考图像和品牌一致性保障的API服务。
+  - **重要更新** 优先选择支持1024x1024、1536x1024、1024x1536等标准尺寸的API服务，确保移动端显示效果。
 
 ### API密钥安全管理最佳实践
 - 使用环境变量
@@ -734,8 +770,9 @@ GI --> BL["assets/brand_logo.png"]
   - 支持b64_json和url两种响应格式的兼容处理。
   - 自动处理base64解码和URL下载。
   - 多参考图像支持，提升生成质量一致性。
+  - **重要更新** 智能缩放功能确保生成图片符合750x1200的目标尺寸，提升移动端显示质量。
 
-**更新** 增强了错误处理和验证机制，提供了更详细的错误报告和故障排查指南，新增了图像生成API的特殊处理机制和品牌一致性保障。
+**更新** 增强了错误处理和验证机制，提供了更详细的错误报告和故障排查指南，新增了图像生成API的特殊处理机制和品牌一致性保障。**重要更新** 新增了智能缩放功能的错误处理和监控建议。
 
 **章节来源**
 - [analyze.py:190-208](file://analyze.py#L190-L208)
@@ -750,9 +787,11 @@ GI --> BL["assets/brand_logo.png"]
   - 帧采样优化：合理设置MAX_API_FRAMES，平衡质量和性能。
   - 图像验证：利用JPEG魔术字节检查和大小限制，提高API调用成功率。
   - 批量处理：图像生成支持批量页面处理，可指定页面范围减少处理时间。
-  - 尺寸优化：合理设置图像尺寸，在质量和速度间取得平衡。
+  - **重要更新** 尺寸优化：合理设置图像尺寸，1024x1536优化移动端显示效果，在质量和速度间取得平衡。
   - 品牌一致性优化：利用品牌logo自动检测和引用，确保生成图片的品牌栏样式统一。
   - 多参考图像：合理使用多张参考图提升生成质量的一致性。
+  - **重要更新** 智能缩放优化：利用resize_to_target函数实现等比缩放和高度限制，确保移动端显示效果。
+  - Pillow库优化：升级至10.0.0版本，提供更好的图像处理算法和性能优化。
 - 监控指标建议
   - 响应时间：平均响应时间、P95/P99延迟。
   - 成功率：API调用成功率、重试次数分布。
@@ -762,6 +801,8 @@ GI --> BL["assets/brand_logo.png"]
   - 帧处理：关键帧数量、采样效率、图像验证成功率。
   - 图像生成：生成时间、成功率、失败原因分类、成本统计。
   - 品牌一致性：品牌logo引用成功率、品牌栏样式一致性评分。
+  - **重要更新** 尺寸合规性：检查生成图片是否符合750x1200目标尺寸，移动端显示效果评分。
+  - **重要更新** Pillow性能：监控图像处理性能，确保Pillow 10.0.0版本正常运行。
   - 并发监控：同时进行的API调用数量、队列长度、等待时间。
 
-**更新** 新增了图像生成阶段的性能优化建议和监控指标，包括生成时间、成功率、成本统计和品牌一致性保障等。
+**更新** 新增了图像生成阶段的性能优化建议和监控指标，包括生成时间、成功率、成本统计和品牌一致性保障等。**重要更新** 新增了智能缩放功能和Pillow库性能的监控指标建议。

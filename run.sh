@@ -92,8 +92,8 @@ VIDEO_CLIP="$VIDEO_CLIP_DIR/video_clip.mp4"
 
 # ---------- 视频时长检查 ----------
 DURATION=$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$VIDEO" 2>/dev/null | cut -d'.' -f1)
-if [ -n "$DURATION" ] && [ "$DURATION" -lt 15 ]; then
-  echo "[run] 警告：视频时长仅 ${DURATION}s（少于15s），将截取可用帧" >&2
+if [ -n "$DURATION" ] && [ "$DURATION" -lt 30 ]; then
+  echo "[run] 警告：视频时长仅 ${DURATION}s（少于30s），将截取可用帧" >&2
 fi
 
 # ---------- 截帧重试函数 ----------
@@ -105,9 +105,9 @@ extract_frame() {
   return 1
 }
 
-# ---------- 1) 截取 15 张关键帧（每秒一帧：0~14 秒）----------
+# ---------- 1) 截取 15 张关键帧（每2秒一帧：0~28 秒）----------
 echo "[run] [1/5] 截取关键帧..."
-TIMES=(0 1 2 3 4 5 6 7 8 9 10 11 12 13 14)
+TIMES=(0 2 4 6 8 10 12 14 16 18 20 22 24 26 28)
 FRAME_COUNT=0
 for i in "${!TIMES[@]}"; do
   IDX=$(printf "%02d" "$i")
@@ -127,10 +127,10 @@ if [ "$FRAME_COUNT" -eq 0 ]; then
 fi
 echo "[run] 成功截取 ${FRAME_COUNT} 张关键帧"
 
-# ---------- 2) 提取前 15 秒音频与视频片段 ----------
-echo "[run] [2/5] 提取前 15 秒音频..."
+# ---------- 2) 提取前 30 秒音频与视频片段 ----------
+echo "[run] [2/5] 提取前 30 秒音频..."
 ffmpeg -hide_banner -loglevel error -y \
-  -i "$VIDEO" -t 15 \
+  -i "$VIDEO" -t 30 \
   -vn -ac 1 -ar 16000 -acodec pcm_s16le \
   "$AUDIO_PATH"
 if [ ! -s "$AUDIO_PATH" ]; then
@@ -138,8 +138,8 @@ if [ ! -s "$AUDIO_PATH" ]; then
   exit 3
 fi
 
-echo "[run]      截取前 15 秒视频片段..."
-ffmpeg -hide_banner -loglevel error -y -i "$VIDEO" -t 15 -c:v libx264 -c:a aac -movflags +faststart "$VIDEO_CLIP"
+echo "[run]      截取前 30 秒视频片段..."
+ffmpeg -hide_banner -loglevel error -y -i "$VIDEO" -t 30 -c:v libx264 -c:a aac -movflags +faststart "$VIDEO_CLIP"
 if [ ! -s "$VIDEO_CLIP" ]; then
   echo "[run] 警告：视频片段截取失败（不影响后续流程）" >&2
 fi

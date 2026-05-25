@@ -267,13 +267,24 @@ def process_page(
         print(f"  x prompt 文件为空：{prompt_file}")
         return False
 
-    # 构建参考图列表：老师参考图 + 品牌 logo
+    # 构建参考图列表：老师参考图 + 老师脸部三视图 + 品牌 logo
     image_paths = [teacher_ref]
+
+    # 添加老师脸部三视图（如果存在）
+    teacher_face_ref_1 = SCRIPT_DIR / "assets" / "teacher_face_ref_1.jpg"
+    teacher_face_ref_2 = SCRIPT_DIR / "assets" / "teacher_face_ref_2.jpg"
+    if teacher_face_ref_1.exists():
+        image_paths.append(teacher_face_ref_1)
+        print(f"  - 老师脸部参考1：{teacher_face_ref_1}")
+    if teacher_face_ref_2.exists():
+        image_paths.append(teacher_face_ref_2)
+        print(f"  - 老师脸部参考2：{teacher_face_ref_2}")
+
     if BRAND_LOGO_PATH.exists():
         image_paths.append(BRAND_LOGO_PATH)
         print(f"  - 品牌 logo：{BRAND_LOGO_PATH}")
     else:
-        print(f"  ! 品牌 logo 不存在，仅使用老师参考图：{BRAND_LOGO_PATH}")
+        print(f"  ! 品牌 logo 不存在，跳过：{BRAND_LOGO_PATH}")
 
     print(f"  - prompt 长度：{len(prompt_text)} 字符")
     print(f"  - 参考图：{[str(p) for p in image_paths]}")

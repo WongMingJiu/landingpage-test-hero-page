@@ -61,17 +61,20 @@ cd <PROJECT_DIR>
 ./run.sh "<视频路径>"
 ```
 
+> `run.sh` 会截取视频**前 30 秒**（每 2 秒 1 帧，共 15 帧）送入多模态分析。
+
 产出目录结构：
 ```
 output/<视频名称>/
 ├── analyse_result/        # analysis.json + landing_page_design.md/.html
 ├── video_clip_result/     # 视频帧 + 音频 + 转写
 └── design_refer/          # 5 套生图 Prompt 变体素材
-    ├── page1/             # prompt.md + teacher_ref.jpg
+    ├── page1/             # prompt.md + teacher_ref.jpg + teacher_face_ref_1.jpg + teacher_face_ref_2.jpg + brand_reference.png
     ├── page2/ ... page5/
 ```
 
-> 生成的 prompt.md 中**品牌栏描述会自动引用项目固定的 `assets/brand_logo.png`**，不再依赖 AI 文字渲染品牌名，确保品牌一致性。
+> - 生成的 prompt.md 中**品牌栏描述会自动引用项目固定的 `assets/brand_logo.png`**，不再依赖 AI 文字渲染品牌名，确保品牌一致性。
+> - 分析阶段会自动引用全局保底痛点/卖点/利益点（`assets/fallback_points.md`），作为 LLM 分析时的参考素材，LLM 可选采纳，保证即使视频信息量不足也能产出高质量文案。
 
 同时自动同步到：`~/workspace/landing-page-manage/唱歌项目/<视频名称>/`
 
@@ -117,14 +120,16 @@ no_proxy='*' NO_PROXY='*' python3 generate_image.py "<视频名称>" --pages 1 3
 
 ### B3. 生图机制说明
 
-生图调用会**自动附加两张参考图**：
+生图调用会**自动附加四张参考图**：
 
 | 参考图 | 来源 | 作用 |
 | --- | --- | --- |
-| `teacher_ref.jpg` | `~/workspace/landing-page-manage/唱歌项目/<视频名>/pageN/teacher_ref.jpg` | 老师形象一致性 |
+| `teacher_ref.jpg` | `~/workspace/landing-page-manage/唱歌项目/<视频名>/pageN/teacher_ref.jpg` | 老师整体形象一致性 |
+| `teacher_face_ref_1.jpg` | `~/workspace/landing-page-manage/唱歌项目/<视频名>/pageN/teacher_face_ref_1.jpg` | 老师脸部三视图参考 1 |
+| `teacher_face_ref_2.jpg` | `~/workspace/landing-page-manage/唱歌项目/<视频名>/pageN/teacher_face_ref_2.jpg` | 老师脸部三视图参考 2 |
 | `assets/brand_logo.png` | 项目根目录固定素材 | 品牌栏 logo 一致性 |
 
-品牌栏不依赖 AI 文字渲染品牌名，而是直接引用固定 logo 参考图，确保跨页视觉统一。
+品牌栏不依赖 AI 文字渲染品牌名，而是直接引用固定 logo 参考图，确保跨页视觉统一。老师脸部三视图参考图用于增强面部特征一致性。
 
 ### B4. 展示生图结果
 
@@ -167,7 +172,7 @@ python3 generate.py
 
 | 现象 | 可能原因 | 处理建议 |
 | --- | --- | --- |
-| `Connection error` / 多模态请求失败 | 图片过多触发上限 | `MAX_API_FRAMES` 设 ≤ 5 |
+| `Connection error` / 多模态请求失败 | 图片过多触发上限 | `MAX_API_FRAMES` 设 ≤ 15（默认采样前 30 秒共 15 帧） |
 | `503 No available accounts` | litellm 账号池耗尽 | 等待或换模型 |
 | Whisper 转写极慢 / OOM | 模型档位过高 | `WHISPER_MODEL` 改为 `small` |
 | 生图 API 报错 | key/endpoint 配置问题 | 检查 `config.env` 中 `IMAGE_API_*` 配置 |
@@ -179,7 +184,7 @@ python3 generate.py
 
 ### 路径 A 完成后：
 - [ ] `landing_page_design.html` 已生成并可打开
-- [ ] `design_refer/page1~page5` 各含 `prompt.md` + 参考图
+- [ ] `design_refer/page1~page5` 各含 `prompt.md` + 参考图（teacher_ref + face_ref×2 + brand_reference）
 - [ ] 已同步到 `~/workspace/landing-page-manage/唱歌项目/<视频名称>/`
 - [ ] 已询问用户是否继续生图
 

@@ -23,11 +23,13 @@ import time
 from typing import List
 
 
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 FRAMES_DIR = os.environ.get("VIDEO_CLIP_DIR", "").strip() or os.path.join("output", "frames")
 TRANSCRIPT_PATH = os.path.join(FRAMES_DIR, "transcript.txt")
 _ANALYSE_DIR = os.environ.get("ANALYSE_DIR", "").strip() or "output"
 ANALYSIS_PATH = os.path.join(_ANALYSE_DIR, "analysis.json")
 PROMPT_PATH = os.path.join("prompts", "analyze_prompt.md")
+FALLBACK_POINTS_PATH = os.path.join(SCRIPT_DIR, "assets", "fallback_points.md")
 
 MAX_RETRIES = 3
 
@@ -245,6 +247,20 @@ def main() -> int:
             print(f"[analyze] 错误：Prompt 文件不存在: {PROMPT_PATH}", file=sys.stderr)
             return 3
         system_prompt = read_text(PROMPT_PATH)
+
+        # 读取保底痛点/卖点/利益点信息并替换占位符
+        fallback_points_text = ""
+        if os.path.isfile(FALLBACK_POINTS_PATH):
+            with open(FALLBACK_POINTS_PATH, "r", encoding="utf-8") as f:
+                fallback_points_text = f.read().strip()
+
+        if fallback_points_text:
+            system_prompt = system_prompt.replace("{fallback_points}", fallback_points_text)
+        else:
+            # 如果没有保底文件，移除整个保底参考段落
+            system_prompt = re.sub(
+                r"## 保底参考信息（可选采纳）.*?(?=\n## |\Z)", "", system_prompt, flags=re.DOTALL
+            )
 
         raw = call_api(api_base, api_key, model, api_frames, transcript, system_prompt)
         print("[analyze] 解析模型返回 JSON...")

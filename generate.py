@@ -44,6 +44,8 @@ HTML_OUT = os.path.join(ANALYSE_DIR, "landing_page_design.html")
 TEACHER_REF_PATH = os.path.join(ANALYSE_DIR, "teacher_ref.jpg")
 
 BRAND_REFERENCE_SRC = os.path.join(SCRIPT_DIR, "assets", "brand_reference.png")
+TEACHER_FACE_REF_1 = os.path.join(SCRIPT_DIR, "assets", "teacher_face_ref_1.jpg")
+TEACHER_FACE_REF_2 = os.path.join(SCRIPT_DIR, "assets", "teacher_face_ref_2.jpg")
 
 MAX_RETRIES = 3
 
@@ -440,6 +442,34 @@ def build_references_html() -> str:
             '</section>'
         )
 
+    # 区域 0.5：老师脸部三视图
+    face_refs_exist = os.path.isfile(TEACHER_FACE_REF_1) or os.path.isfile(TEACHER_FACE_REF_2)
+    if face_refs_exist:
+        face_imgs = ""
+        if os.path.isfile(TEACHER_FACE_REF_1):
+            rel1 = _rel_from_html(TEACHER_FACE_REF_1)
+            face_imgs += (
+                f'  <img src="{html.escape(rel1)}" alt="老师脸部参考1" '
+                'style="max-width: 400px; border-radius: 8px; '
+                'box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-right: 12px;">\n'
+            )
+        if os.path.isfile(TEACHER_FACE_REF_2):
+            rel2 = _rel_from_html(TEACHER_FACE_REF_2)
+            face_imgs += (
+                f'  <img src="{html.escape(rel2)}" alt="老师脸部参考2" '
+                'style="max-width: 400px; border-radius: 8px; '
+                'box-shadow: 0 2px 8px rgba(0,0,0,0.1);">\n'
+            )
+        sections.append(
+            '<section class="reference-section">\n'
+            '  <h2>老师脸部参考（三视图）</h2>\n'
+            '  <p>生图时请参照以下三视图保持老师面部五官一致性：</p>\n'
+            '  <div style="display: flex; flex-wrap: wrap; gap: 12px;">\n'
+            + face_imgs +
+            '  </div>\n'
+            '</section>'
+        )
+
     # 区域 A：老师参考图（与 HTML 同目录）
     if os.path.isfile(TEACHER_REF_PATH):
         sections.append(
@@ -503,7 +533,9 @@ def build_references_html() -> str:
         '  <p>生图时请同时附上：</p>\n'
         '  <ol>\n'
         '    <li><code>teacher_ref.jpg</code>（老师形象参考）</li>\n'
-        '    <li><code>assets/brand_reference.png</code>（品牌栏样式参考）</li>\n'
+        '    <li><code>assets/teacher_face_ref_1.jpg</code>（老师脸部三视图1）</li>\n'
+        '    <li><code>assets/teacher_face_ref_2.jpg</code>（老师脸部三视图2）</li>\n'
+        '    <li><code>assets/brand_logo.png</code>（品牌 logo 参考）</li>\n'
         '  </ol>\n'
         '</section>'
     )
@@ -606,6 +638,18 @@ def write_design_refer(variants: List[Tuple[int, str, str]]) -> int:
                 print(f"[generate] 警告：复制 brand_reference.png 到 {page_dir} 失败：{e}", file=sys.stderr)
         else:
             print(f"[generate] 警告：brand_reference.png 不存在: {BRAND_REFERENCE_SRC}", file=sys.stderr)
+
+        # 4) teacher_face_ref_1.jpg / teacher_face_ref_2.jpg - 老师脸部三视图
+        if os.path.isfile(TEACHER_FACE_REF_1):
+            try:
+                shutil.copy2(TEACHER_FACE_REF_1, os.path.join(page_dir, "teacher_face_ref_1.jpg"))
+            except Exception as e:
+                print(f"[generate] 警告：复制 teacher_face_ref_1.jpg 到 {page_dir} 失败：{e}", file=sys.stderr)
+        if os.path.isfile(TEACHER_FACE_REF_2):
+            try:
+                shutil.copy2(TEACHER_FACE_REF_2, os.path.join(page_dir, "teacher_face_ref_2.jpg"))
+            except Exception as e:
+                print(f"[generate] 警告：复制 teacher_face_ref_2.jpg 到 {page_dir} 失败：{e}", file=sys.stderr)
 
         suffix_show = f"（{suffix}）" if suffix else ""
         print(f"[generate] page{idx} 写入完成（变体{num}{suffix_show}）: {page_dir}")

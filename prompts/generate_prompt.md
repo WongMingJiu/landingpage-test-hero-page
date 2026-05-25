@@ -50,6 +50,11 @@
 4. **主标题**（课程核心卖点）
 5. **底部价值承诺条**：一句话承诺（非按钮，不用点击引导词），高饱和度底色
 
+## 老师形象约束（必须严格遵守）
+- 脸部特征：严格参照提供的老师脸部三视图参考图，保持面部五官一致性（短发和盘发均为同一人）
+- 着装：使用 analysis.json 中 teacher_outfit 描述的服装（视频中首次出现的着装），不要使用三视图中的服装
+- 不要自由发挥老师的外貌和服装
+
 ## 重要约束
 - 本课程为**纯线上课程**，不得出现"线下""面授""到场"等暗示线下的文案
 - 底部价值承诺条**不做按钮**，**不使用**"立即""点击""领取""报名""试听"等点击引导词
@@ -125,5 +130,7 @@ Chinese text to render:
 
 IMPORTANT: When using any of these prompts, attach the following reference images:
 1. "output/teacher_ref.jpg" - teacher appearance reference
-2. "assets/brand_logo.png" - brand logo bar reference (use exactly as-is for the top brand bar area)
-3. Optionally attach 1-2 images from "assets/examples/" as overall style reference
+2. "assets/teacher_face_ref_1.jpg" - teacher face multi-angle reference 1 (for facial feature consistency)
+3. "assets/teacher_face_ref_2.jpg" - teacher face multi-angle reference 2 (for facial feature consistency)
+4. "assets/brand_logo.png" - brand logo bar reference (use exactly as-is for the top brand bar area)
+5. Optionally attach 1-2 images from "assets/examples/" as overall style reference
