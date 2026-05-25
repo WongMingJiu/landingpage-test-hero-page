@@ -547,8 +547,8 @@ def build_references_html() -> str:
 
 # ----------------- 变体提取 / 素材分发 -----------------
 
-# 匹配形如 "### 变体 1" / "### 变体 1：xxx" / "### 变体1: xxx" 的标题
-_VARIANT_HEADING_RE = re.compile(r"^###\s*变体\s*(\d+)\s*[:：]?\s*(.*)$")
+# 匹配形如 "## 变体 1" / "### 变体 1：xxx" / "### 变体1: xxx" 的标题（兼容二级和三级）
+_VARIANT_HEADING_RE = re.compile(r"^#{2,3}\s*变体\s*(\d+)\s*[:：]?\s*(.*)$")
 
 
 def extract_variants(md_text: str) -> List[Tuple[int, str, str]]:
