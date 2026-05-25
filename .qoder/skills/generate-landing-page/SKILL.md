@@ -61,7 +61,7 @@ cd <PROJECT_DIR>
 ./run.sh "<视频路径>"
 ```
 
-> `run.sh` 会截取视频**前 30 秒**（每 2 秒 1 帧，共 15 帧）送入多模态分析。
+> `run.sh` 会截取视频**前 30 秒**（每 1 秒 1 帧，共 30 帧）送入多模态分析。
 
 产出目录结构：
 ```
@@ -172,7 +172,7 @@ python3 generate.py
 
 | 现象 | 可能原因 | 处理建议 |
 | --- | --- | --- |
-| `Connection error` / 多模态请求失败 | 图片过多触发上限 | `MAX_API_FRAMES` 设 ≤ 15（默认采样前 30 秒共 15 帧） |
+| `Connection error` / 多模态请求失败 | 图片过多触发上限 | `MAX_API_FRAMES` 设 ≤ 30（默认采样前 30 秒共 30 帧） |
 | `503 No available accounts` | litellm 账号池耗尽 | 等待或换模型 |
 | Whisper 转写极慢 / OOM | 模型档位过高 | `WHISPER_MODEL` 改为 `small` |
 | 生图 API 报错 | key/endpoint 配置问题 | 检查 `config.env` 中 `IMAGE_API_*` 配置 |
