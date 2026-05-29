@@ -197,6 +197,7 @@ def call_api(api_base: str, api_key: str, model: str, frames: List[dict], transc
                 model=model,
                 messages=messages,
                 temperature=0.3,
+                max_tokens=16384,
             )
             content = resp.choices[0].message.content or ""
             if not content.strip():

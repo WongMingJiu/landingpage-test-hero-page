@@ -20,6 +20,7 @@
     DESIGN_REFER_DIR - 各变体素材输出根目录
 """
 
+import base64
 import html
 import json
 import os
@@ -53,6 +54,70 @@ MAX_RETRIES = 3
 def read_text(path: str) -> str:
     with open(path, "r", encoding="utf-8") as f:
         return f.read()
+
+
+def describe_teacher_outfit(image_path: str, api_base: str, api_key: str, model: str) -> str:
+    """调用多模态模型，对老师参考图进行视觉描述，返回一句话着装描述。
+
+    使用 OpenAI 兼容的多模态消息格式（content 数组中包含 image_url），
+    图片使用 base64 内联编码。
+    """
+    try:
+        from openai import OpenAI  # type: ignore
+    except ImportError as e:
+        raise RuntimeError(f"未安装 openai 库: {e}")
+
+    if not os.path.isfile(image_path):
+        raise RuntimeError(f"参考图不存在: {image_path}")
+
+    # API Base URL 规范化（与 call_api 一致）
+    if not api_base.rstrip('/').endswith('/v1'):
+        api_base = api_base.rstrip('/') + '/v1'
+
+    # 读取并 base64 编码
+    with open(image_path, "rb") as f:
+        img_b64 = base64.b64encode(f.read()).decode("utf-8")
+    ext = os.path.splitext(image_path)[1].lower().lstrip(".") or "jpeg"
+    if ext == "jpg":
+        ext = "jpeg"
+    data_url = f"data:image/{ext};base64,{img_b64}"
+
+    client = OpenAI(api_key=api_key, base_url=api_base)
+    system_msg = (
+        "请用一句话简洁描述图片中人物的着装，包括：服装颜色、款式、配饰。"
+        "只描述着装，不要描述其他内容。"
+    )
+    messages = [
+        {"role": "system", "content": system_msg},
+        {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": "请用一句中文描述这位人物的着装。"},
+                {"type": "image_url", "image_url": {"url": data_url}},
+            ],
+        },
+    ]
+
+    last_err: Exception | None = None
+    for attempt in range(1, MAX_RETRIES + 1):
+        try:
+            print(f"[generate] 调用视觉预处理 API (第 {attempt}/{MAX_RETRIES} 次)，模型: {model}")
+            resp = client.chat.completions.create(
+                model=model,
+                messages=messages,
+                temperature=0.2,
+            )
+            content = resp.choices[0].message.content or ""
+            content = content.strip()
+            if not content:
+                raise RuntimeError("视觉预处理返回空内容")
+            return content
+        except Exception as e:
+            last_err = e
+            backoff = 2 ** (attempt - 1)
+            print(f"[generate] 视觉预处理失败：{e}; {backoff}s 后重试", file=sys.stderr)
+            time.sleep(backoff)
+    raise RuntimeError(f"视觉预处理多次失败: {last_err}")
 
 
 def call_api(api_base: str, api_key: str, model: str, system_prompt: str) -> str:
@@ -687,7 +752,6 @@ def main() -> int:
 
     analysis_str = json.dumps(analysis, ensure_ascii=False, indent=2)
     prompt_tpl = read_text(PROMPT_PATH)
-    system_prompt = prompt_tpl.replace("analysis_json", analysis_str)
 
     # 提取老师参考帧
     best_frame = "frame_00"  # 默认
@@ -711,6 +775,29 @@ def main() -> int:
             print(f"[generate] 警告：{best_frame} 不存在，使用 frame_00 作为参考图", file=sys.stderr)
         else:
             print(f"[generate] 警告：无可用的老师参考帧（{src_path} 和 frame_00 均缺失）", file=sys.stderr)
+
+    # 视觉预处理：提取老师着装描述
+    teacher_outfit_desc = ""
+    if os.path.isfile(TEACHER_REF_PATH):
+        try:
+            analyse_base = (os.environ.get("ANALYSE_API_BASE_URL") or api_base).strip()
+            analyse_key = (os.environ.get("ANALYSE_API_KEY") or api_key).strip()
+            analyse_model = (os.environ.get("ANALYSE_MODEL_NAME") or model).strip()
+            teacher_outfit_desc = describe_teacher_outfit(TEACHER_REF_PATH, analyse_base, analyse_key, analyse_model)
+            print(f"[generate] 老师着装描述: {teacher_outfit_desc}")
+        except Exception as e:
+            print(f"[generate] 警告：视觉预处理失败，将不注入着装描述：{e}", file=sys.stderr)
+
+    # 组装 system_prompt（在视觉预处理之后，注入着装描述）
+    system_prompt = prompt_tpl.replace("analysis_json", analysis_str)
+    if teacher_outfit_desc:
+        outfit_instruction = (
+            "\n\n## 老师着装参考（来自 teacher_ref.jpg 的视觉分析）\n\n"
+            f"实际着装：{teacher_outfit_desc}\n\n"
+            "请在每套生图 Prompt 的老师形象描述中，明确包含上述着装颜色和款式描述，"
+            "确保 gpt-image-2 不会因品牌色偏见而改变老师的着装颜色。"
+        )
+        system_prompt = system_prompt + outfit_instruction
 
     try:
         md_text = call_api(api_base, api_key, model, system_prompt)

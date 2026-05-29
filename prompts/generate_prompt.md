@@ -15,35 +15,55 @@
 以下是从 10 张真实兴趣岛唱歌课程落地页中总结的常见布局模板，你可以参考、混搭或创新：
 
 ### 模板 A：卖点徽章型
-- 顶部品牌栏（使用提供的品牌 logo 参考图，原样保持其设计风格、颜色和文字排版）→ 大标题 → 效果徽章（圆形/胶囊，2-4字短词如"上高音""气息稳"）→ 老师半身照（右侧）→ 痛点列表 → 底部承诺条
-- 配色：浅暖底 + 绿色/红色强调
+- 顶部品牌 logo（小巧徽章，使用提供的品牌 logo 参考图，不占据主要区域）→ 大标题 → 效果徽章（圆形/胶囊，2-4字短词如"上高音""气息稳"）→ 老师半身照（右侧）→ 痛点列表 → 底部承诺条
+- 配色建议：浅暖底 + 绿色/红色强调（也可根据视频场景调整）
 - 适合强调教学效果
 
 ### 模板 B：歌曲列表型
-- 顶部品牌栏 → 大标题 + "中老年轻松入门" → 效果标签 → 老师（右侧）→ 歌曲编号列表（5-6首） → 场景标签（KTV/居家/公园）→ 底部承诺条
-- 配色：暖橙渐变 + 金色
+- 顶部品牌 logo → 大标题 + "中老年轻松入门" → 效果标签 → 老师（右侧）→ 歌曲编号列表（5-6首） → 场景标签（KTV/居家/公园）→ 底部承诺条
+- 配色建议：暖橙渐变 + 金色 或 清新蓝绿渐变
 - 适合有明确曲目内容时
 
 ### 模板 C：教学特色型
-- 顶部品牌栏 → 大标题 → 教学方式标签（"动作拆解""直播带练""老师亲授"）→ 老师（右侧）→ 勾选式卖点（"✓ 0基础""✓ 看得懂""✓ 练得会"）→ 底部承诺条
-- 配色：中国风暖色（米白+金色+红色点缀）
+- 顶部品牌 logo → 大标题 → 教学方式标签（"动作拆解""直播带练""老师亲授"）→ 老师（右侧）→ 勾选式卖点（"✓ 0基础""✓ 看得懂""✓ 练得会"）→ 底部承诺条
+- 配色建议：中国风暖色（米白+金色+红色点缀）或 素雅水墨风（浅灰+墨绿+米白）
 - 适合强调教学方法
 
 ### 模板 D：利益冲击型
-- 顶部品牌栏 → "中老年专属"标签 → 超大标题（如"0基础轻松唱歌营"）→ 一句核心承诺 → 老师形象（右侧）→ 歌曲列表 → 底部承诺条
-- 配色：浓烈红色渐变 + 金色光效
+- 顶部品牌 logo → "中老年专属"标签 → 超大标题（如"0基础轻松唱歌营"）→ 一句核心承诺 → 老师形象（右侧）→ 歌曲列表 → 底部承诺条
+- 配色建议：浓烈红色渐变 + 金色光效 或 明亮蓝色渐变 + 金色点缀
 - 适合强冲击力、高转化
 
 ### 模板 E：痛点共鸣型
-- 顶部品牌栏 → 大标题 → 副标题 → 老师（右侧）→ 痛点+解决方案并列（如"告别大白嗓 → 在家就能轻松学"）→ 底部承诺条
-- 配色：暖色渐变
+- 顶部品牌 logo → 大标题 → 副标题 → 老师（右侧）→ 痛点+解决方案并列（如"告别大白嗓 → 在家就能轻松学"）→ 底部承诺条
+- 配色建议：暖色渐变 或 自然清新（天蓝/浅绿渐变+白色）
 - 适合用户痛点明确时
+
+### 可选配色方案参考
+
+以下配色方案供选择，**5 个变体必须覆盖至少 2 种不同色系**：
+
+| 色系 | 配色 | 适用场景 |
+|------|------|----------|
+| 暖金系 | 金色渐变 + 红/棕点缀 | 室内暖光教学、中式典雅 |
+| 清新系 | 天蓝/浅绿渐变 + 白色 | 户外场景、轻松活力 |
+| 素雅系 | 米白/浅米黄 + 浅绿/浅棕 | 专业柔和、文人气质 |
+| 活力系 | 橙红渐变 + 明黄 | 高能量、强冲击 |
+| 柔粉系 | 浅粉/浅紫渐变 + 白色 | 亲和温馨、女性教师 |
+
+> ⚠️ **禁用深色背景**：目标用户为 50+ 中老年人群，**禁止使用黑色、深蓝、深绿、深灰、藏青等深沉色调作为主背景色**。所有配色方案必须保持背景明亮、轻快、高可读性。深色仅可作为文字色或极小面积点缀使用。
 
 你也可以**不限于以上模板**，根据分析数据自由创作新布局。
 
+### ⚠️ 配色多样性约束（必须遵守）
+
+1. **5 个变体必须使用不同的配色方案**：不允许 5 个变体全部使用同一色系（如全部暖金）。至少覆盖 2-3 种不同色系。
+2. **根据视频场景动态选择**：观察视频截帧的主色调和场景氛围（室内暖光？户外清新？舞台冷蓝？），选择与视频调性最匹配的色系作为主选，同时用其他色系创造差异化变体。
+3. **优先匹配视频色调**：如果视频以户外自然场景为主，至少 2 个变体应使用清新/自然色系；如果视频以室内暖光为主，暖色可以多用但仍需有 1-2 个差异化色系。
+
 ## 固定元素（每套方案都必须包含）
-1. **品牌标识栏**（顶部）：使用提供的品牌 logo 参考图（brand_logo.png），原样保持其红色背景、"兴趣岛"白色大字、"兴趣学堂"小字、以及"学唱歌就上兴趣岛"tagline 的布局。不要让 AI 重新渲染品牌文字，直接参考品牌 logo 图片的设计。
-2. **老师形象**：基于视频中的外观描述，半身照
+1. **品牌标识 logo**（顶部左上角或顶部居中）：使用提供的品牌 logo 参考图（brand_logo.png），这是一个小巧的红底圆角徽章，内含"兴趣岛"白色大字和"兴趣学堂"小字。保持 logo 小巧精致，不要做成全宽横条。品牌 logo 仅占顶部小区域，不应主导整体配色方案。
+2. **老师形象**：严格基于 teacher_ref.jpg 中的完整外观（服装、发型、体态），半身照
 3. **老师姓名 + 头衔**：
    - 如果分析数据中 `teacher.title` 有值（视频中明确提及），则所有变体统一使用该头衔
    - 如果 `teacher.title` 为 null，则每套变体从头衔池中随机选用一个（"兴趣岛唱歌训练营首席讲师"或"身体唱歌法创始人"），不同变体可以不同
@@ -51,9 +71,16 @@
 5. **底部价值承诺条**：一句话承诺（非按钮，不用点击引导词），高饱和度底色
 
 ## 老师形象约束（必须严格遵守）
-- 脸部特征：严格参照提供的老师脸部三视图参考图，保持面部五官一致性（短发和盘发均为同一人）
-- 着装：使用 analysis.json 中 teacher_outfit 描述的服装（视频中首次出现的着装），不要使用三视图中的服装
+
+### 参考图权重规则
+- **teacher_ref.jpg = 整体形象基准**：老师的服装、发型、体态、气质全部以此图为准
+- **teacher_face_ref_1/2.jpg = 仅面部五官参考**：只用于增强面部特征一致性（眼睛、鼻子、嘴巴、脸型），必须忽略其中的服装和发型
+
+### 约束
+- 服装：严格复刻 teacher_ref.jpg 中的着装，不得使用三视图中的服装
+- 发型：严格复刻 teacher_ref.jpg 中的发型，不得使用三视图中的发型
 - 不要自由发挥老师的外貌和服装
+- **生图 Prompt 中禁止写死具体服装颜色/款式文字**：由于生成 Prompt 的 LLM 无法看到 teacher_ref.jpg 图片，不要在英文 Prompt 中描述具体的着装颜色（如"red jacket""blue shirt"），而应使用"replicate exact appearance from teacher_ref.jpg"来指示 gpt-image-2 直接从图片获取着装信息
 
 ## 重要约束
 - 本课程为**纯线上课程**，不得出现"线下""面授""到场"等暗示线下的文案
@@ -86,7 +113,7 @@ analysis_json
 
 用 3-5 句话说明：
 1. 配色方向（基于视频色调）
-2. 老师形象特征（便于后续描述）
+2. 老师形象特征（仅描述体态、气质、年龄段等不含具体服装颜色的特征，服装细节由 teacher_ref.jpg 图片提供）
 3. 核心卖点提炼
 4. 文案策略
 
@@ -112,7 +139,8 @@ analysis_json
 - 主色/辅色选择的理由（与品牌调性、用户群体的关联）
 - 字体大小和粗细选择的理由（适老化考量、信息层级区分）
 - 色彩对比度和可读性考量（中老年视力友好度）
-- 情绪色彩如何服务转化目标（如暖色激发信任、金色暗示价值等）
+- 情绪色彩如何服务转化目标（如暖色激发信任、清新色传递轻松、深色建立权威等）
+- 为什么选择这个色系而非其他（与视频场景的关联、与其他变体的差异化）
 
 #### 3. 文案策略分析
 - 痛点→卖点→利益点的转化逻辑链路（完整推演）
@@ -135,8 +163,8 @@ analysis_json
 1. 英文撰写，可直接用于 gpt-image2
 2. 尺寸：竖版 1080x1920
 3. 必须包含中文文案渲染指令（列出每个文字元素及位置）
-4. 必须包含品牌栏描述（品牌区域使用提供的品牌 logo 参考图 brand_logo.png，原样保持其红色背景、文字排版和配色，不要让 AI 自行渲染品牌文字）
-5. 包含老师形象描述
+4. 必须包含品牌 logo 描述（品牌区域使用提供的品牌 logo 参考图 brand_logo.png，保持小巧精致的徽章样式。品牌 logo 不应占据大面积区域，也不应主导整体配色）
+5. 老师形象描述不要写具体的服装颜色/款式/发型文字，统一使用以下固定句式："A middle-aged Chinese female teacher, replicate her exact appearance (clothing, hairstyle, accessories, body posture) from the attached teacher_ref.jpg reference image. Do NOT invent or assume any clothing details — use ONLY what is visible in teacher_ref.jpg."
 6. 包含装饰元素（音符、光效等）
 7. 底部承诺条使用强视觉色彩但非按钮
 8. 每套 Prompt 中的中文文案可以有差异（主标题、副标题、痛点/卖点用语可不同）
@@ -145,7 +173,7 @@ analysis_json
 ### 每套 Prompt 的中文文字清单格式：
 ```
 Chinese text to render:
-- Brand bar: "兴趣岛兴趣学堂" (wordmark text logo, no graphical icon) | tagline: "学唱歌就上兴趣岛" | "名师更多·课程更全"
+- Brand logo: "兴趣岛" + "兴趣学堂" (small rounded badge, top-left or top-center, compact size)
 - Headline: "XXX"
 - Subtitle: "XXX"
 - Teacher name: "XXX"
@@ -155,8 +183,10 @@ Chinese text to render:
 ```
 
 IMPORTANT: When using any of these prompts, attach the following reference images:
-1. "output/teacher_ref.jpg" - teacher appearance reference
-2. "assets/teacher_face_ref_1.jpg" - teacher face multi-angle reference 1 (for facial feature consistency)
-3. "assets/teacher_face_ref_2.jpg" - teacher face multi-angle reference 2 (for facial feature consistency)
-4. "assets/brand_logo.png" - brand logo bar reference (use exactly as-is for the top brand bar area)
+1. "output/teacher_ref.jpg" - PRIMARY teacher reference (clothing, hairstyle, body posture, overall look — replicate exactly)
+2. "assets/teacher_face_ref_1.jpg" - face features ONLY (ignore clothing and hairstyle in this image)
+3. "assets/teacher_face_ref_2.jpg" - face features ONLY (ignore clothing and hairstyle in this image)
+4. "assets/brand_logo.png" - brand logo badge reference (small compact logo, place at top corner or top center, do NOT expand into a full-width bar, do NOT let brand colors dominate the overall design)
 5. Optionally attach 1-2 images from "assets/examples/" as overall style reference
+
+⚠️ Reference image priority: teacher_ref.jpg > face refs. If there is any conflict in clothing or hairstyle between teacher_ref and face refs, ALWAYS follow teacher_ref.jpg.
