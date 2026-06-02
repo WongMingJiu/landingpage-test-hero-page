@@ -20,6 +20,7 @@
     DESIGN_REFER_DIR - 各变体素材输出根目录
 """
 
+import argparse
 import base64
 import html
 import json
@@ -664,9 +665,10 @@ def extract_variants(md_text: str) -> List[Tuple[int, str, str]]:
     return results
 
 
-def write_design_refer(variants: List[Tuple[int, str, str]]) -> int:
+def write_design_refer(variants: List[Tuple[int, str, str]], page_offset: int = 0) -> int:
     """将每个变体的 prompt + 老师参考图 + 品牌参考图写入 DESIGN_REFER_DIR/pageN/。
 
+    page_offset：页码起始偏移（batch=1 传 0 → page1..pageK；batch=2 传 5 → page6..page(5+K)）。
     返回成功写入的页数。
     """
     if not variants:
@@ -677,14 +679,23 @@ def write_design_refer(variants: List[Tuple[int, str, str]]) -> int:
 
     written = 0
     for idx, (num, suffix, prompt_text) in enumerate(variants, start=1):
-        # pageN 用枚举顺序而不是变体声明的编号，确保即便模型跳号也能形成 page1..pageK
-        page_dir = os.path.join(DESIGN_REFER_DIR, f"page{idx}")
+        # pageN 用枚举顺序加偏移，确保即便模型跳号也能形成连续编号
+        page_idx = idx + page_offset
+        page_dir = os.path.join(DESIGN_REFER_DIR, f"page{page_idx}")
         os.makedirs(page_dir, exist_ok=True)
 
         # 1) prompt.md
         prompt_path = os.path.join(page_dir, "prompt.md")
         with open(prompt_path, "w", encoding="utf-8") as f:
             f.write(prompt_text.rstrip() + "\n")
+
+        # 1.1) style.txt - 记录变体风格名称，用于后续 batch 去重
+        style_path = os.path.join(page_dir, "style.txt")
+        try:
+            with open(style_path, "w", encoding="utf-8") as f:
+                f.write(f"变体{num}：{suffix}\n")
+        except Exception as e:
+            print(f"[generate] 警告：写入 {style_path} 失败：{e}", file=sys.stderr)
 
         # 2) teacher_ref.jpg
         if os.path.isfile(TEACHER_REF_PATH):
@@ -717,16 +728,100 @@ def write_design_refer(variants: List[Tuple[int, str, str]]) -> int:
                 print(f"[generate] 警告：复制 teacher_face_ref_2.jpg 到 {page_dir} 失败：{e}", file=sys.stderr)
 
         suffix_show = f"（{suffix}）" if suffix else ""
-        print(f"[generate] page{idx} 写入完成（变体{num}{suffix_show}）: {page_dir}")
+        print(f"[generate] page{page_idx} 写入完成（变体{num}{suffix_show}）: {page_dir}")
         written += 1
 
     return written
+
+
+# ----------------- batch=2 去重摘要 -----------------
+
+_COLOR_KEYWORDS = [
+    # 中文
+    "暖金", "暖橙", "金色", "红色", "红", "橙", "蓝", "绿", "粉", "紫", "米白", "米黄",
+    "水墨", "墨绿", "中国风", "清新", "素雅", "柔粉", "活力", "渐变", "光效", "金黄",
+    # 英文
+    "gold", "red", "orange", "blue", "green", "pink", "purple", "beige", "ivory",
+    "warm", "cool", "gradient", "pastel", "emerald", "crimson", "amber", "teal",
+]
+
+
+def _extract_color_hits(text: str, limit: int = 6) -> List[str]:
+    if not text:
+        return []
+    hits: List[str] = []
+    seen = set()
+    lower = text.lower()
+    for kw in _COLOR_KEYWORDS:
+        needle = kw.lower()
+        if needle in lower and kw not in seen:
+            hits.append(kw)
+            seen.add(kw)
+            if len(hits) >= limit:
+                break
+    return hits
+
+
+def build_existing_variants_summary(page_count: int = 5) -> str:
+    """读取已有 pageN/style.txt + pageN/prompt.md，组装去重摘要文本。
+
+    用于 batch=2 注入到 system prompt 的 {existing_variants_summary} 占位符位置。
+    """
+    items: List[str] = []
+    for i in range(1, page_count + 1):
+        page_dir = os.path.join(DESIGN_REFER_DIR, f"page{i}")
+        if not os.path.isdir(page_dir):
+            continue
+        style_path = os.path.join(page_dir, "style.txt")
+        prompt_path = os.path.join(page_dir, "prompt.md")
+        style = ""
+        if os.path.isfile(style_path):
+            try:
+                style = read_text(style_path).strip()
+            except Exception:
+                style = ""
+        prompt_text = ""
+        if os.path.isfile(prompt_path):
+            try:
+                prompt_text = read_text(prompt_path).strip()
+            except Exception:
+                prompt_text = ""
+        colors = _extract_color_hits(prompt_text)
+        color_str = "、".join(colors) if colors else "未识别"
+        excerpt = prompt_text[:240].replace("\n", " ") + ("..." if len(prompt_text) > 240 else "")
+        items.append(
+            f"- 已有 page{i}（{style or '无标题'}）\n"
+            f"  · 配色关键词：{color_str}\n"
+            f"  · Prompt 摘要：{excerpt}"
+        )
+    if not items:
+        return ""
+    body = "\n".join(items)
+    return (
+        "\n## ⚠️ 已有方案去重约束（batch 2 模式）\n\n"
+        "以下是上一轮已生成的 5 套方案方向。本轮新生成的 5 套方案"
+        "**必须**与它们在 **风格名称、配色方案、布局结构** 三个维度上 **完全不同**，"
+        "不允许简单换色或换标题。请主动选择灵感库中尚未使用的布局思路（例如 F~K），"
+        "或自由创造全新布局以拉开差异化。\n\n"
+        "已有方案清单：\n" + body + "\n"
+    )
 
 
 # ----------------- 主流程 -----------------
 
 def main() -> int:
     start_time = time.time()
+
+    parser = argparse.ArgumentParser(description="生成落地页设计方案")
+    parser.add_argument(
+        "--batch",
+        type=int,
+        default=1,
+        help="批次：1=生成 page1-page5（默认）；2=读取已有 page1-5 作为去重参考，输出到 page6-page10",
+    )
+    args, _unknown = parser.parse_known_args()
+    batch = max(1, int(args.batch))
+    page_offset = 5 * (batch - 1)
 
     api_base = (os.environ.get("GENERATE_API_BASE_URL") or os.environ.get("API_BASE_URL") or "").strip()
     api_key = (os.environ.get("GENERATE_API_KEY") or os.environ.get("API_KEY") or "").strip()
@@ -752,6 +847,19 @@ def main() -> int:
 
     analysis_str = json.dumps(analysis, ensure_ascii=False, indent=2)
     prompt_tpl = read_text(PROMPT_PATH)
+
+    # batch=2 时构建去重摘要，注入到 prompt 模板的 {existing_variants_summary} 占位符
+    existing_summary = ""
+    if batch >= 2:
+        existing_summary = build_existing_variants_summary(page_count=5)
+        if existing_summary:
+            print(f"[generate] batch={batch}：已构建去重摘要（{len(existing_summary)} 字）")
+        else:
+            print(
+                f"[generate] 警告：batch={batch} 但未在 {DESIGN_REFER_DIR} 下找到已有 page1-5，"
+                "去重摘要为空\n",
+                file=sys.stderr,
+            )
 
     # 提取老师参考帧
     best_frame = "frame_00"  # 默认
@@ -790,6 +898,7 @@ def main() -> int:
 
     # 组装 system_prompt（在视觉预处理之后，注入着装描述）
     system_prompt = prompt_tpl.replace("analysis_json", analysis_str)
+    system_prompt = system_prompt.replace("{existing_variants_summary}", existing_summary)
     if teacher_outfit_desc:
         outfit_instruction = (
             "\n\n## 老师着装参考（来自 teacher_ref.jpg 的视觉分析）\n\n"
@@ -812,30 +921,48 @@ title: Landing Page Hero 设计方案
 generated_at: {time.strftime("%Y-%m-%d %H:%M:%S")}
 model: {model}
 source_video: {source_video}
+batch: {batch}
 ---
 
 """
     md_full = meta + md_text.strip() + "\n"
-    with open(MD_OUT, "w", encoding="utf-8") as f:
+    # batch>1 时文件名加后缀，避免覆盖 batch=1 的产物
+    if batch >= 2:
+        md_out = MD_OUT.replace(".md", f"_batch{batch}.md")
+        html_out = HTML_OUT.replace(".html", f"_batch{batch}.html")
+    else:
+        md_out = MD_OUT
+        html_out = HTML_OUT
+    with open(md_out, "w", encoding="utf-8") as f:
         f.write(md_full)
-    print(f"[generate] 设计方案 Markdown 已保存: {MD_OUT}")
+    print(f"[generate] 设计方案 Markdown 已保存: {md_out}")
 
     try:
         elapsed = int(time.time() - start_time)
         html_text = build_html(md_text, elapsed)
-        with open(HTML_OUT, "w", encoding="utf-8") as f:
+        with open(html_out, "w", encoding="utf-8") as f:
             f.write(html_text)
-        print(f"[generate] 设计方案 HTML 已保存: {HTML_OUT}")
+        print(f"[generate] 设计方案 HTML 已保存: {html_out}")
     except Exception as e:
         print(f"[generate] 警告：生成 HTML 失败：{e}", file=sys.stderr)
         return 6
 
-    # 解析变体并写入 design_refer/pageN/
+    # 解析变体并写入 design_refer/pageN/（batch=1 起始于 page1，batch=2 起始于 page6）
     try:
         variants = extract_variants(md_text)
-        n_pages = write_design_refer(variants)
+        # 截断保护：每个 batch 最多写入 5 个变体，防止模型在去重压力下多产出变体
+        if len(variants) > 5:
+            print(
+                f"[generate] 注意：模型输出了 {len(variants)} 个变体，超过预期 5 个，仅保留前 5 个",
+                file=sys.stderr,
+            )
+            variants = variants[:5]
+        n_pages = write_design_refer(variants, page_offset=page_offset)
         if n_pages > 0:
-            print(f"[generate] 共生成 {n_pages} 个变体素材文件夹于: {DESIGN_REFER_DIR}")
+            print(
+                f"[generate] 共生成 {n_pages} 个变体素材文件夹于: {DESIGN_REFER_DIR}"
+                f"（page{page_offset + 1}..page{page_offset + n_pages}）"
+            )
     except Exception as e:
         # 提取失败不应阻塞主流程
         print(f"[generate] 警告：解析变体或写入 design_refer 失败：{e}", file=sys.stderr)

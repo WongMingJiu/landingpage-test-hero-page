@@ -29,7 +29,12 @@ TRANSCRIPT_PATH = os.path.join(FRAMES_DIR, "transcript.txt")
 _ANALYSE_DIR = os.environ.get("ANALYSE_DIR", "").strip() or "output"
 ANALYSIS_PATH = os.path.join(_ANALYSE_DIR, "analysis.json")
 PROMPT_PATH = os.path.join("prompts", "analyze_prompt.md")
-FALLBACK_POINTS_PATH = os.path.join(SCRIPT_DIR, "assets", "fallback_points.md")
+
+# 老师面部三视图参考图（用于辅助识别视频中的老师）
+TEACHER_REF_PATHS = [
+    os.path.join(SCRIPT_DIR, "assets", "teacher_face_ref_1.jpg"),
+    os.path.join(SCRIPT_DIR, "assets", "teacher_face_ref_2.jpg"),
+]
 
 MAX_RETRIES = 3
 
@@ -148,6 +153,28 @@ def call_api(api_base: str, api_key: str, model: str, frames: List[dict], transc
     client = OpenAI(api_key=api_key, base_url=api_base)
 
     user_content = []
+
+    # 先注入老师面部三视图参考图（base64），用于辅助识别视频中的老师
+    for ref_path in TEACHER_REF_PATHS:
+        if not os.path.isfile(ref_path):
+            print(f"[analyze] 警告：老师参考图不存在: {ref_path}", file=sys.stderr)
+            continue
+        with open(ref_path, "rb") as f:
+            ref_data = f.read()
+        ref_b64 = base64.b64encode(ref_data).decode("ascii")
+        user_content.append(
+            {
+                "type": "image_url",
+                "image_url": {"url": f"data:image/jpeg;base64,{ref_b64}"},
+            }
+        )
+        user_content.append(
+            {
+                "type": "text",
+                "text": "以下是老师的面部参考图（三视图），请以此识别视频中的老师：",
+            }
+        )
+
     for fr in frames:
         user_content.append(
             {
@@ -249,19 +276,7 @@ def main() -> int:
             return 3
         system_prompt = read_text(PROMPT_PATH)
 
-        # 读取保底痛点/卖点/利益点信息并替换占位符
-        fallback_points_text = ""
-        if os.path.isfile(FALLBACK_POINTS_PATH):
-            with open(FALLBACK_POINTS_PATH, "r", encoding="utf-8") as f:
-                fallback_points_text = f.read().strip()
-
-        if fallback_points_text:
-            system_prompt = system_prompt.replace("{fallback_points}", fallback_points_text)
-        else:
-            # 如果没有保底文件，移除整个保底参考段落
-            system_prompt = re.sub(
-                r"## 保底参考信息（可选采纳）.*?(?=\n## |\Z)", "", system_prompt, flags=re.DOTALL
-            )
+        # 不再注入预设兜底痛点/卖点/利益点：完全依赖视频前30秒的实际信息提取
 
         raw = call_api(api_base, api_key, model, api_frames, transcript, system_prompt)
         print("[analyze] 解析模型返回 JSON...")
