@@ -1,23 +1,23 @@
 # landingpage-test-hero-page
 
-> 一键将「广告视频前 15 秒」转换为「落地页 Hero 区域」的 5 套 AI 生图设计方案。
+> 一键将「广告视频前 30 秒」转换为「落地页 Hero 区域」的多套 AI 生图设计方案。
 
 ## 项目简介
 
-本工具是一套面向**营销设计团队**的 AI 自动化流水线，专门服务于**中老年唱歌课程**类广告视频的落地页 Hero 区域设计。
+本工具是一套面向**营销设计团队**的 AI 自动化流水线，专门服务于**中老年课程**类广告视频的落地页 Hero 区域设计，支持多品类（唱歌、健康营养等）。
 
 输入一段广告视频，工具会自动完成：
 
-> **视频文件 → 自动截帧 → 本地 Whisper 转写 → 多模态 AI 结构化分析 → 5 套不同风格的落地页生图 Prompt**
+> **视频文件 → 自动截帧 → 本地 Whisper 转写 → 多模态 AI 结构化分析 → 多套不同风格的落地页生图 Prompt**
 
-最终产出 5 套各具风格的生图素材包（含 Prompt + 老师参考图 + 品牌参考图），可直接喂给 AI 生图工具批量出图。
+最终产出多套各具风格的生图素材包（含 Prompt + 老师参考图 + 品牌参考图），可直接喂给 AI 生图工具批量出图。
 
 ## 功能特性
 
-- **视频前 15 秒自动截帧**：1 秒/帧，共 15 帧关键帧
+- **视频前 30 秒自动截帧**：1 秒/帧，共 30 帧关键帧
 - **Whisper 本地语音转写**：完全本地推理，无需上传云端，保护素材隐私
 - **多模态 AI 结构化分析**：自动提取痛点 / 卖点 / 老师形象 / 歌曲列表 / 效果标签等结构化营销信息
-- **5 套不同风格生图 Prompt 自动生成**：温馨怀旧、活力舞台、清新简约、专业课堂、潮流时尚等多变体
+- **多套不同风格生图 Prompt 自动生成**：温馨怀旧、活力舞台、清新简约、专业课堂、潮流时尚等多变体
 - **结构化输出目录**：分析结果 / 视频素材 / 生图素材包 三层清晰分离
 - **自动同步到设计管理项目**：运行结束自动复制到 `landing-page-manage` 项目对应目录，下游设计师即取即用
 
@@ -76,11 +76,11 @@ chmod +x run.sh
 执行流程：
 
 ```
-[1/5] 截取前 15 秒关键帧
-[2/5] 提取前 15 秒音频
+[1/5] 截取前 30 秒关键帧
+[2/5] 提取前 30 秒音频
 [3/5] Whisper 本地转写
 [4/5] 多模态结构化分析
-[5/5] 生成 5 套落地页 Hero 生图方案
+[5/5] 生成落地页 Hero 生图方案
 ```
 
 ### 方式二：Qoder Skill 触发
@@ -90,7 +90,7 @@ chmod +x run.sh
 **模式 1：输入视频**（分析 + 生成 Prompt + 可选生图）
 > "帮我分析这个视频生成落地页设计方案：/path/to/video.mp4"
 
-Skill 会先执行分析流水线生成 5 套 Prompt 变体，完成后**询问你是否继续调用生图 API 生成图片**。
+Skill 会先执行分析流水线生成多套 Prompt 变体，完成后**询问你是否继续调用生图 API 生成图片**。
 
 **模式 2：输入视频名称直接生图**（已有 Prompt 素材时）
 > "帮我把 陈家智-xxx 的方案生成图片"
@@ -101,14 +101,14 @@ Skill 会直接调用 `generate_image.py` 生成落地页图片。
 ### 方式三：终端单独跑生图
 
 ```bash
-# 全部 5 套
+# 全部变体
 python3 generate_image.py "视频名称"
 
 # 指定 page
 python3 generate_image.py "视频名称" --pages 1 3 5
 ```
 
-生成的图片保存到：`~/workspace/landing-page-manage/唱歌项目/landing-page/{视频名称}/pageN/result.png`
+生成的图片保存到：`~/workspace/landing-page-manage/{品类名}/landing-page/{视频名称}/pageN.png`
 
 ## 输出结构
 
@@ -123,20 +123,20 @@ output/{视频名称}/
 │   └── teacher_ref.jpg          # 自动选帧得到的老师参考图
 │
 ├── video_clip_result/           # 视频原始素材
-│   ├── video_clip.mp4           # 前 15 秒片段
-│   ├── frame_00.jpg ~ frame_14.jpg  # 15 张关键帧
-│   ├── audio.wav                # 前 15 秒音频（16kHz 单声道）
+│   ├── video_clip.mp4           # 前 30 秒片段
+│   ├── frame_00.jpg ~ frame_29.jpg  # 30 张关键帧
+│   ├── audio.wav                # 前 30 秒音频（16kHz 单声道）
 │   └── transcript.txt           # Whisper 转写文本
 │
-└── design_refer/                # 5 套生图素材包（每个变体独立目录）
+└── design_refer/                # 多套生图素材包（每个变体独立目录）
     ├── page1/
     │   ├── prompt.md            # 该变体的生图 Prompt
     │   ├── teacher_ref.jpg      # 老师参考图
-    │   └── brand_reference.png  # 品牌参考图
+    │   ├── brand_reference.png  # 品牌参考图
+    │   └── teacher_face_ref_*.jpg # 老师脸部三视图
     ├── page2/
-    ├── page3/
-    ├── page4/
-    └── page5/
+    ├── ...
+    └── pageN/
 ```
 
 ## 同步说明
@@ -144,27 +144,26 @@ output/{视频名称}/
 每次运行结束后，`design_refer/` 内容会被**自动同步**到设计管理项目：
 
 ```
-~/workspace/landing-page-manage/唱歌项目/{视频名称}/
+~/workspace/landing-page-manage/{品类名}/{视频名称}/
 ├── page1/
 ├── page2/
-├── page3/
-├── page4/
-└── page5/
+├── ...
+└── pageN/
 ```
 
-每个 `pageN` 文件夹都是一份**自包含**的生图素材，可直接交付给设计师或喂给 AI 生图工具批量出图，无需任何额外整理。
+每个 `pageN` 文件夹都是一份**自包含**的生图素材，可直接交付给设计师或喂给 AI 生图工具批量出图。
 
 ## 技术架构
 
 ```
 ┌──────────┐   ┌─────────┐   ┌──────────┐   ┌──────────────┐   ┌────────────────┐   ┌──────────────────┐
-│ 视频文件 │ → │ ffmpeg  │ → │ Whisper  │ → │ 多模态 AI     │ → │ 结构化 JSON     │ → │ 5 套生图 Prompt  │
-│  (.mp4)  │   │  截帧   │   │  本地转写│   │ 综合分析      │   │ (痛点/卖点/老师)│   │ 变体（page1~5）  │
+│ 视频文件 │ → │ ffmpeg  │ → │ Whisper  │ → │ 多模态 AI     │ → │ 结构化 JSON     │ → │ 多套生图 Prompt   │
+│  (.mp4)  │   │  截帧   │   │  本地转写│   │ 综合分析      │   │ (痛点/卖点/老师)│   │ 变体（page1~N）   │
 └──────────┘   └─────────┘   └──────────┘   └──────────────┘   └────────────────┘   └──────────────────┘
                                                                                               │
                                                                                               ▼
                                                                            ┌──────────────────────────────────┐
-                                                                           │ 同步到 landing-page-manage/唱歌项目 │
+                                                                           │ 同步到 landing-page-manage/{品类名} │
                                                                            └──────────────────────────────────┘
 ```
 
@@ -173,7 +172,7 @@ output/{视频名称}/
 - [`run.sh`](run.sh) — 主入口流水线脚本
 - [`transcribe.py`](transcribe.py) — 本地 Whisper ASR 转写
 - [`analyze.py`](analyze.py) — 多模态结构化分析
-- [`generate.py`](generate.py) — 5 套落地页生图 Prompt 生成 + 同步
+- [`generate.py`](generate.py) — 多套落地页生图 Prompt 生成 + 同步
 - [`prompts/analyze_prompt.md`](prompts/analyze_prompt.md) — 分析阶段 Prompt 模板
 - [`prompts/generate_prompt.md`](prompts/generate_prompt.md) — 生成阶段 Prompt 模板
 

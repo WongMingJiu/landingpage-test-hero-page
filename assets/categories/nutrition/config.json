@@ -1,0 +1,13 @@
+{
+  "display_name": "健康营养",
+  "default_teacher_name": "王溪",
+  "variant_count": 10,
+  "description": "中老年健康营养教学课程，强调营养知识、食疗方案、健康管理等。",
+  "applicable_inspirations": "A, C, D, E, F, G, I, J, K",
+  "title_pool": ["兴趣岛健康膳食营养首席讲师"],
+  "content_list_name": "课程内容",
+  "content_list_description": "具体食材、营养知识点、食疗方案等",
+  "decoration_elements": "蔬果图标🥦🍎、健康心形❤️、绿叶元素🌿、阳光光晕",
+  "pain_points": ["指标异常", "体质变差", "体重增加", "作息不规律", "情绪异常", "营养失衡", "食欲不振", "失眠多梦", "头昏脑涨", "脸色发黄", "皮肤变差", "疲劳乏力"],
+  "selling_points": ["针对管理精准改善", "正常指标强身健体", "了解饮食营养误区", "改善日常饮食习惯", "减掉负担安神助眠"]
+}

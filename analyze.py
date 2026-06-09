@@ -18,9 +18,12 @@ import glob
 import json
 import os
 import re
+import shutil
 import sys
 import time
 from typing import List
+
+from category_config import get_prompt_path, get_teacher_ref_paths, get_category_name, load_category_config
 
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -28,13 +31,10 @@ FRAMES_DIR = os.environ.get("VIDEO_CLIP_DIR", "").strip() or os.path.join("outpu
 TRANSCRIPT_PATH = os.path.join(FRAMES_DIR, "transcript.txt")
 _ANALYSE_DIR = os.environ.get("ANALYSE_DIR", "").strip() or "output"
 ANALYSIS_PATH = os.path.join(_ANALYSE_DIR, "analysis.json")
-PROMPT_PATH = os.path.join("prompts", "analyze_prompt.md")
+PROMPT_PATH = get_prompt_path("analyze")
 
 # 老师面部三视图参考图（用于辅助识别视频中的老师）
-TEACHER_REF_PATHS = [
-    os.path.join(SCRIPT_DIR, "assets", "teacher_face_ref_1.jpg"),
-    os.path.join(SCRIPT_DIR, "assets", "teacher_face_ref_2.jpg"),
-]
+TEACHER_REF_PATHS = get_teacher_ref_paths()
 
 MAX_RETRIES = 3
 
@@ -205,7 +205,7 @@ def call_api(api_base: str, api_key: str, model: str, frames: List[dict], transc
         {
             "type": "text",
             "text": (
-                "以下是视频前15秒的口播脚本转写文本，请结合上方关键帧综合分析：\n\n"
+                "以下是视频前30秒的口播脚本转写文本，请结合上方关键帧综合分析：\n\n"
                 f"{transcript.strip()}"
             ),
         }
@@ -236,6 +236,70 @@ def call_api(api_base: str, api_key: str, model: str, frames: List[dict], transc
             print(f"[analyze] 调用失败：{e}; {backoff}s 后重试", file=sys.stderr)
             time.sleep(backoff)
     raise RuntimeError(f"API 调用多次失败: {last_err}")
+
+
+def _save_recipe_frames(data: dict) -> None:
+    """从分析结果中提取食谱帧并保存到 ANALYSE_DIR。
+
+    - 从 data["recipe_frames"]["recipe_frame_indices"] 读取帧编号列表
+    - 将对应帧图片复制到 ANALYSE_DIR/recipe_ref_N.jpg（最多3帧）
+    - 图片超过 200KB 时进行压缩
+    """
+    recipe_data = data.get("recipe_frames", {})
+    if not recipe_data:
+        return
+
+    recipe_indices = recipe_data.get("recipe_frame_indices", [])
+    if not recipe_indices:
+        print("[analyze] 未检测到食谱参考帧，跳过")
+        return
+
+    recipe_desc = recipe_data.get("recipe_description", "")
+    print(f"[analyze] 检测到 {len(recipe_indices)} 个食谱帧: {recipe_indices}")
+    if recipe_desc:
+        print(f"[analyze] 食谱内容: {recipe_desc}")
+
+    saved_count = 0
+    for i, frame_idx in enumerate(recipe_indices[:3], 1):  # 最多3帧
+        frame_file = os.path.join(FRAMES_DIR, f"frame_{int(frame_idx):02d}.jpg")
+        if not os.path.isfile(frame_file):
+            print(f"[analyze] 警告：食谱帧 frame_{int(frame_idx):02d}.jpg 不存在，跳过", file=sys.stderr)
+            continue
+
+        dest = os.path.join(_ANALYSE_DIR, f"recipe_ref_{i}.jpg")
+
+        # 检查文件大小，超过 200KB 则压缩
+        file_size = os.path.getsize(frame_file)
+        if file_size > 200 * 1024:
+            try:
+                from PIL import Image  # type: ignore
+                img = Image.open(frame_file)
+                # 压缩到 200KB 以下
+                quality = 85
+                while quality > 20:
+                    img.save(dest, "JPEG", quality=quality)
+                    if os.path.getsize(dest) <= 200 * 1024:
+                        break
+                    quality -= 10
+                else:
+                    # 如果降低质量仍超过，调整尺寸
+                    w, h = img.size
+                    ratio = (200 * 1024 / os.path.getsize(dest)) ** 0.5
+                    img = img.resize((int(w * ratio), int(h * ratio)), Image.LANCZOS)
+                    img.save(dest, "JPEG", quality=60)
+                print(f"[analyze] 食谱参考帧已压缩保存: {dest} ({os.path.getsize(dest) // 1024}KB)")
+            except ImportError:
+                # 没有 PIL 则直接复制
+                shutil.copy2(frame_file, dest)
+                print(f"[analyze] 食谱参考帧已保存(未压缩，缺少Pillow): {dest} ({file_size // 1024}KB)", file=sys.stderr)
+        else:
+            shutil.copy2(frame_file, dest)
+            print(f"[analyze] 食谱参考帧已保存: {dest} ({file_size // 1024}KB)")
+
+        saved_count += 1
+
+    if saved_count > 0:
+        print(f"[analyze] 共保存 {saved_count} 张食谱参考图到 {_ANALYSE_DIR}")
 
 
 def main() -> int:
@@ -276,6 +340,11 @@ def main() -> int:
             return 3
         system_prompt = read_text(PROMPT_PATH)
 
+        # 替换 Prompt 中的品类配置占位符
+        cat_cfg = load_category_config()
+        system_prompt = system_prompt.replace("{TITLE_POOL_JSON}", json.dumps(cat_cfg.get("title_pool", []), ensure_ascii=False))
+        system_prompt = system_prompt.replace("{CONTENT_LIST_NAME}", cat_cfg.get("content_list_name", "课程内容"))
+
         # 不再注入预设兜底痛点/卖点/利益点：完全依赖视频前30秒的实际信息提取
 
         raw = call_api(api_base, api_key, model, api_frames, transcript, system_prompt)
@@ -298,6 +367,11 @@ def main() -> int:
         with open(ANALYSIS_PATH, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
         print(f"[analyze] 分析结果已保存: {ANALYSIS_PATH}")
+
+        # ===== 食谱参考帧提取（仅 nutrition 品类）=====
+        if get_category_name() == "nutrition":
+            _save_recipe_frames(data)
+
         return 0
     except Exception as e:
         print(f"[analyze] 发生错误：{e}", file=sys.stderr)

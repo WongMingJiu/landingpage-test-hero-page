@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 落地页生图脚本
-读取 ~/workspace/landing-page-manage/唱歌项目/{视频名}/pageN/ 中的 prompt.md 和参考图，
+读取 ~/workspace/landing-page-manage/{品类名}/{视频名}/pageN/ 中的 prompt.md 和参考图，
 调用 gpt-image-2 API 生成落地页图片，保存到 landing-page/{视频名}/pageN.png
 
 使用方式：
@@ -23,13 +23,17 @@ from typing import List, Optional
 import requests
 from PIL import Image
 
+from category_config import get_category_folder, get_brand_logo_path
+
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 CONFIG_PATH = SCRIPT_DIR / "config.env"
-BRAND_LOGO_PATH = SCRIPT_DIR / "assets" / "brand_logo.png"
+_brand_logo = get_brand_logo_path()
+BRAND_LOGO_PATH = Path(_brand_logo) if _brand_logo else (SCRIPT_DIR / "assets" / "brand_logo.png")
 
 # 默认输入/输出根目录
-DEFAULT_INPUT_ROOT = Path.home() / "workspace" / "landing-page-manage" / "唱歌项目"
+_category_folder = get_category_folder()
+DEFAULT_INPUT_ROOT = Path.home() / "workspace" / "landing-page-manage" / _category_folder
 DEFAULT_OUTPUT_ROOT = DEFAULT_INPUT_ROOT / "landing-page"
 
 # 默认参数
@@ -270,15 +274,15 @@ def process_page(
     # 构建参考图列表：老师参考图 + 老师脸部三视图 + 品牌 logo
     image_paths = [teacher_ref]
 
-    # 添加老师脸部三视图（如果存在）
-    teacher_face_ref_1 = SCRIPT_DIR / "assets" / "teacher_face_ref_1.jpg"
-    teacher_face_ref_2 = SCRIPT_DIR / "assets" / "teacher_face_ref_2.jpg"
-    if teacher_face_ref_1.exists():
-        image_paths.append(teacher_face_ref_1)
-        print(f"  - 老师脸部参考1：{teacher_face_ref_1}")
-    if teacher_face_ref_2.exists():
-        image_paths.append(teacher_face_ref_2)
-        print(f"  - 老师脸部参考2：{teacher_face_ref_2}")
+    # 添加老师脸部三视图（从 page_dir 读取，generate.py 已按当前品类实际数量复制到此目录）
+    face_ref_idx = 1
+    while True:
+        face_ref = page_dir / f"teacher_face_ref_{face_ref_idx}.jpg"
+        if not face_ref.exists():
+            break
+        image_paths.append(face_ref)
+        print(f"  - 老师脸部参考{face_ref_idx}：{face_ref}")
+        face_ref_idx += 1
 
     if BRAND_LOGO_PATH.exists():
         image_paths.append(BRAND_LOGO_PATH)

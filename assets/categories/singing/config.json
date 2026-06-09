@@ -1,0 +1,9 @@
+{
+  "display_name": "唱歌",
+  "description": "中老年唱歌教学课程，强调音乐表达、歌曲演唱、呼吸技巧等。",
+  "applicable_inspirations": "A, B, C, D, E, F, G, H, I, J, K",
+  "title_pool": ["兴趣岛唱歌训练营首席讲师", "身体唱歌法创始人"],
+  "content_list_name": "课程曲目",
+  "content_list_description": "具体歌曲名称（如《送别》《鸿雁》等）",
+  "decoration_elements": "音符♪、麦克风图标、舞台光效、金色光晕"
+}

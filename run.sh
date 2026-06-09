@@ -173,7 +173,7 @@ python3 generate.py
 }
 
 # ---------- 6) 同步 design_refer 到落地页管理仓库 ----------
-SYNC_TARGET_BASE="$HOME/workspace/landing-page-manage/唱歌项目"
+SYNC_TARGET_BASE="$HOME/workspace/landing-page-manage/${CATEGORY_FOLDER_NAME:-唱歌}"
 SYNC_TARGET="$SYNC_TARGET_BASE/$VIDEO_NAME"
 echo ""
 echo "[run] [6/6] 同步 design_refer 到: $SYNC_TARGET"

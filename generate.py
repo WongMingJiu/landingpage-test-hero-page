@@ -22,6 +22,7 @@
 
 import argparse
 import base64
+import glob
 import html
 import json
 import os
@@ -30,6 +31,8 @@ import shutil
 import sys
 import time
 from typing import List, Tuple
+
+from category_config import get_prompt_path, load_category_config, get_brand_reference_path, get_teacher_ref_paths, get_category_name
 
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -40,14 +43,14 @@ ANALYSE_DIR = os.environ.get("ANALYSE_DIR", "").strip() or "output"
 DESIGN_REFER_DIR = os.environ.get("DESIGN_REFER_DIR", "").strip() or os.path.join("output", "design_refer")
 
 ANALYSIS_PATH = os.path.join(ANALYSE_DIR, "analysis.json")
-PROMPT_PATH = os.path.join("prompts", "generate_prompt.md")
+PROMPT_PATH = get_prompt_path("generate")
 MD_OUT = os.path.join(ANALYSE_DIR, "landing_page_design.md")
 HTML_OUT = os.path.join(ANALYSE_DIR, "landing_page_design.html")
 TEACHER_REF_PATH = os.path.join(ANALYSE_DIR, "teacher_ref.jpg")
 
-BRAND_REFERENCE_SRC = os.path.join(SCRIPT_DIR, "assets", "brand_reference.png")
-TEACHER_FACE_REF_1 = os.path.join(SCRIPT_DIR, "assets", "teacher_face_ref_1.jpg")
-TEACHER_FACE_REF_2 = os.path.join(SCRIPT_DIR, "assets", "teacher_face_ref_2.jpg")
+BRAND_REFERENCE_SRC = get_brand_reference_path() or os.path.join(SCRIPT_DIR, "assets", "brand_reference.png")
+# 老师脸部参考图列表（数量由当前品类决定，不跨品类回退到全局 assets/）
+TEACHER_FACE_REFS = [p for p in get_teacher_ref_paths() if os.path.isfile(p)]
 
 MAX_RETRIES = 3
 
@@ -121,7 +124,7 @@ def describe_teacher_outfit(image_path: str, api_base: str, api_key: str, model:
     raise RuntimeError(f"视觉预处理多次失败: {last_err}")
 
 
-def call_api(api_base: str, api_key: str, model: str, system_prompt: str) -> str:
+def call_api(api_base: str, api_key: str, model: str, system_prompt: str, recipe_images: List[str] = None) -> str:
     try:
         from openai import OpenAI  # type: ignore
     except ImportError as e:
@@ -132,10 +135,34 @@ def call_api(api_base: str, api_key: str, model: str, system_prompt: str) -> str
         api_base = api_base.rstrip('/') + '/v1'
 
     client = OpenAI(api_key=api_key, base_url=api_base)
-    messages = [
-        {"role": "system", "content": system_prompt},
-        {"role": "user", "content": "请基于上方的输入数据，按照输出要求生成完整的落地页 Hero 区域设计方案。"},
-    ]
+
+    # 如果有食谱参考图，使用多模态消息格式
+    if recipe_images:
+        user_content = []
+        user_content.append({
+            "type": "text",
+            "text": "请基于上方的输入数据，按照输出要求生成完整的落地页 Hero 区域设计方案。\n\n"
+                    "以下是食谱参考图，请从中提取具体的食谱名称、菜名、食材信息，用于落地页文案中：",
+        })
+        for img_path in recipe_images:
+            with open(img_path, "rb") as f:
+                img_b64 = base64.b64encode(f.read()).decode("utf-8")
+            ext = os.path.splitext(img_path)[1].lower().lstrip(".") or "jpeg"
+            if ext == "jpg":
+                ext = "jpeg"
+            user_content.append({
+                "type": "image_url",
+                "image_url": {"url": f"data:image/{ext};base64,{img_b64}"},
+            })
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_content},
+        ]
+    else:
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": "请基于上方的输入数据，按照输出要求生成完整的落地页 Hero 区域设计方案。"},
+        ]
 
     last_err: Exception | None = None
     for attempt in range(1, MAX_RETRIES + 1):
@@ -448,7 +475,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     <section class="hero">
       <span class="kicker">Design Brief</span>
       <h2>从广告视频到落地页 Hero<br/>一份可直接落地的视觉与文案方案</h2>
-      <p class="lead">基于视频前 15 秒的多模态分析结果，自动生成的设计思路、页面结构、文案与主视觉 Prompt。</p>
+      <p class="lead">基于视频前 30 秒的多模态分析结果，自动生成的设计思路、页面结构、文案与主视觉 Prompt。</p>
     </section>
 
     <article class="content">
@@ -508,23 +535,17 @@ def build_references_html() -> str:
             '</section>'
         )
 
-    # 区域 0.5：老师脸部三视图
-    face_refs_exist = os.path.isfile(TEACHER_FACE_REF_1) or os.path.isfile(TEACHER_FACE_REF_2)
-    if face_refs_exist:
+    # 区域 0.5：老师脸部三视图（按品类实际参考图数量动态嵌入）
+    if TEACHER_FACE_REFS:
         face_imgs = ""
-        if os.path.isfile(TEACHER_FACE_REF_1):
-            rel1 = _rel_from_html(TEACHER_FACE_REF_1)
+        total = len(TEACHER_FACE_REFS)
+        for i, ref_path in enumerate(TEACHER_FACE_REFS):
+            rel = _rel_from_html(ref_path)
+            margin = ' margin-right: 12px;' if i < total - 1 else ''
             face_imgs += (
-                f'  <img src="{html.escape(rel1)}" alt="老师脸部参考1" '
+                f'  <img src="{html.escape(rel)}" alt="老师脸部参考{i + 1}" '
                 'style="max-width: 400px; border-radius: 8px; '
-                'box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-right: 12px;">\n'
-            )
-        if os.path.isfile(TEACHER_FACE_REF_2):
-            rel2 = _rel_from_html(TEACHER_FACE_REF_2)
-            face_imgs += (
-                f'  <img src="{html.escape(rel2)}" alt="老师脸部参考2" '
-                'style="max-width: 400px; border-radius: 8px; '
-                'box-shadow: 0 2px 8px rgba(0,0,0,0.1);">\n'
+                f'box-shadow: 0 2px 8px rgba(0,0,0,0.1);{margin}">\n'
             )
         sections.append(
             '<section class="reference-section">\n'
@@ -554,7 +575,7 @@ def build_references_html() -> str:
         rel_video = _rel_from_html(video_clip)
         sections.append(
             '<section class="reference-section">\n'
-            '  <h2>视频前15秒片段</h2>\n'
+            '  <h2>视频前30秒片段</h2>\n'
             '  <video controls style="max-width: 100%; border-radius: 8px;">\n'
             f'    <source src="{html.escape(rel_video)}" type="video/mp4">\n'
             '    您的浏览器不支持视频播放\n'
@@ -592,16 +613,19 @@ def build_references_html() -> str:
                 '</section>'
             )
 
-    # 附图提示
+    # 附图提示（根据当前品类的实际参考图数量动态生成）
+    face_ref_items = "".join(
+        f'    <li><code>teacher_face_ref_{i + 1}.jpg</code>（老师脸部三视图{i + 1}）</li>\n'
+        for i in range(len(TEACHER_FACE_REFS))
+    )
     sections.append(
         '<section class="reference-section">\n'
         '  <h2>生图附图提示</h2>\n'
         '  <p>生图时请同时附上：</p>\n'
         '  <ol>\n'
         '    <li><code>teacher_ref.jpg</code>（老师形象参考）</li>\n'
-        '    <li><code>assets/teacher_face_ref_1.jpg</code>（老师脸部三视图1）</li>\n'
-        '    <li><code>assets/teacher_face_ref_2.jpg</code>（老师脸部三视图2）</li>\n'
-        '    <li><code>assets/brand_logo.png</code>（品牌 logo 参考）</li>\n'
+        + face_ref_items +
+        '    <li><code>brand_logo.png</code>（品牌 logo 参考）</li>\n'
         '  </ol>\n'
         '</section>'
     )
@@ -715,17 +739,13 @@ def write_design_refer(variants: List[Tuple[int, str, str]], page_offset: int = 
         else:
             print(f"[generate] 警告：brand_reference.png 不存在: {BRAND_REFERENCE_SRC}", file=sys.stderr)
 
-        # 4) teacher_face_ref_1.jpg / teacher_face_ref_2.jpg - 老师脸部三视图
-        if os.path.isfile(TEACHER_FACE_REF_1):
+        # 4) teacher_face_ref_*.jpg - 老师脸部三视图（按当前品类实际数量复制）
+        for i, ref_path in enumerate(TEACHER_FACE_REFS):
+            dst_name = f"teacher_face_ref_{i + 1}.jpg"
             try:
-                shutil.copy2(TEACHER_FACE_REF_1, os.path.join(page_dir, "teacher_face_ref_1.jpg"))
+                shutil.copy2(ref_path, os.path.join(page_dir, dst_name))
             except Exception as e:
-                print(f"[generate] 警告：复制 teacher_face_ref_1.jpg 到 {page_dir} 失败：{e}", file=sys.stderr)
-        if os.path.isfile(TEACHER_FACE_REF_2):
-            try:
-                shutil.copy2(TEACHER_FACE_REF_2, os.path.join(page_dir, "teacher_face_ref_2.jpg"))
-            except Exception as e:
-                print(f"[generate] 警告：复制 teacher_face_ref_2.jpg 到 {page_dir} 失败：{e}", file=sys.stderr)
+                print(f"[generate] 警告：复制 {dst_name} 到 {page_dir} 失败：{e}", file=sys.stderr)
 
         suffix_show = f"（{suffix}）" if suffix else ""
         print(f"[generate] page{page_idx} 写入完成（变体{num}{suffix_show}）: {page_dir}")
@@ -821,7 +841,11 @@ def main() -> int:
     )
     args, _unknown = parser.parse_known_args()
     batch = max(1, int(args.batch))
-    page_offset = 5 * (batch - 1)
+
+    # 品类配置预加载：读取 variant_count（默认 5，后面会被实际品类配置覆盖）
+    _cat_cfg_pre = load_category_config()
+    variant_count = int(_cat_cfg_pre.get("variant_count", 5) or 5)
+    page_offset = variant_count * (batch - 1)
 
     api_base = (os.environ.get("GENERATE_API_BASE_URL") or os.environ.get("API_BASE_URL") or "").strip()
     api_key = (os.environ.get("GENERATE_API_KEY") or os.environ.get("API_KEY") or "").strip()
@@ -845,13 +869,35 @@ def main() -> int:
         print(f"[generate] 错误：analysis.json 解析失败：{e}", file=sys.stderr)
         return 4
 
+    # ===== 老师名称 fallback：分析结果缺失时使用品类配置默认值 =====
+    category_config = load_category_config()
+    teacher_info = analysis.get("teacher") or {}
+    if not teacher_info.get("name"):
+        default_name = category_config.get("default_teacher_name", "")
+        if default_name:
+            if "teacher" not in analysis or analysis["teacher"] is None:
+                analysis["teacher"] = {}
+            analysis["teacher"]["name"] = default_name
+            print(f"[generate] 老师名称缺失，使用品类默认值: {default_name}")
+
     analysis_str = json.dumps(analysis, ensure_ascii=False, indent=2)
     prompt_tpl = read_text(PROMPT_PATH)
+
+    # ===== 品类配置占位符替换 =====
+    variant_count = int(category_config.get("variant_count", variant_count) or variant_count)
+    page_offset = variant_count * (batch - 1)
+    prompt_tpl = prompt_tpl.replace("{VARIANT_COUNT}", str(variant_count))
+    prompt_tpl = prompt_tpl.replace("{TITLE_POOL_JSON}", json.dumps(category_config.get("title_pool", []), ensure_ascii=False))
+    prompt_tpl = prompt_tpl.replace("{CATEGORY_DISPLAY_NAME}", category_config.get("display_name", ""))
+    prompt_tpl = prompt_tpl.replace("{CONTENT_LIST_NAME}", category_config.get("content_list_name", "课程内容"))
+    prompt_tpl = prompt_tpl.replace("{DECORATION_ELEMENTS}", category_config.get("decoration_elements", ""))
+    prompt_tpl = prompt_tpl.replace("{PAIN_POINTS_JSON}", json.dumps(category_config.get("pain_points", []), ensure_ascii=False))
+    prompt_tpl = prompt_tpl.replace("{SELLING_POINTS_JSON}", json.dumps(category_config.get("selling_points", []), ensure_ascii=False))
 
     # batch=2 时构建去重摘要，注入到 prompt 模板的 {existing_variants_summary} 占位符
     existing_summary = ""
     if batch >= 2:
-        existing_summary = build_existing_variants_summary(page_count=5)
+        existing_summary = build_existing_variants_summary(page_count=variant_count)
         if existing_summary:
             print(f"[generate] batch={batch}：已构建去重摘要（{len(existing_summary)} 字）")
         else:
@@ -908,8 +954,19 @@ def main() -> int:
         )
         system_prompt = system_prompt + outfit_instruction
 
+    # ===== 检测食谱参考图（仅 nutrition 品类）=====
+    recipe_refs: List[str] = []
+    if get_category_name() == "nutrition":
+        recipe_refs = sorted(glob.glob(os.path.join(ANALYSE_DIR, "recipe_ref_*.jpg")))
+        if recipe_refs:
+            print(f"[generate] 检测到 {len(recipe_refs)} 张食谱参考图，将传入生成 API")
+            for rp in recipe_refs:
+                print(f"[generate]   - {rp} ({os.path.getsize(rp) // 1024}KB)")
+        else:
+            print("[generate] 未检测到食谱参考图，跳过食谱内容提取")
+
     try:
-        md_text = call_api(api_base, api_key, model, system_prompt)
+        md_text = call_api(api_base, api_key, model, system_prompt, recipe_images=recipe_refs)
     except Exception as e:
         print(f"[generate] 调用失败：{e}", file=sys.stderr)
         return 5
@@ -947,16 +1004,16 @@ batch: {batch}
         print(f"[generate] 警告：生成 HTML 失败：{e}", file=sys.stderr)
         return 6
 
-    # 解析变体并写入 design_refer/pageN/（batch=1 起始于 page1，batch=2 起始于 page6）
+    # 解析变体并写入 design_refer/pageN/（batch=1 起始于 page1，batch=2 起始于 page{variant_count+1}）
     try:
         variants = extract_variants(md_text)
-        # 截断保护：每个 batch 最多写入 5 个变体，防止模型在去重压力下多产出变体
-        if len(variants) > 5:
+        # 截断保护：每个 batch 最多写入 variant_count 个变体，防止模型在去重压力下多产出变体
+        if len(variants) > variant_count:
             print(
-                f"[generate] 注意：模型输出了 {len(variants)} 个变体，超过预期 5 个，仅保留前 5 个",
+                f"[generate] 注意：模型输出了 {len(variants)} 个变体，超过预期 {variant_count} 个，仅保留前 {variant_count} 个",
                 file=sys.stderr,
             )
-            variants = variants[:5]
+            variants = variants[:variant_count]
         n_pages = write_design_refer(variants, page_offset=page_offset)
         if n_pages > 0:
             print(
