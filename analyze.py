@@ -317,14 +317,17 @@ def main() -> int:
         print(f"[analyze] 共加载 {len(frames)} 张帧（编号: {[f['index'] for f in frames]}）")
 
         # 控制实际发送给 API 的最大帧数（防止 token 过多 / API 图片数量限制）
+        # 需要扣除 teacher_ref 图片数量，避免请求体超出网关上限
         try:
-            max_api_frames = int(os.environ.get("MAX_API_FRAMES", "10"))
+            max_api_frames_total = int(os.environ.get("MAX_API_FRAMES", "10"))
         except ValueError:
-            max_api_frames = 10
+            max_api_frames_total = 10
+        num_teacher_refs = len([p for p in TEACHER_REF_PATHS if os.path.isfile(p)])
+        max_api_frames = max(2, max_api_frames_total - num_teacher_refs)  # 至少保留 2 帧
         api_frames = sample_frames_for_api(frames, max_api_frames)
         if len(api_frames) < len(frames):
             picked_idx = [f["index"] for f in api_frames]
-            print(f"[analyze] 帧数 {len(frames)} 超过 MAX_API_FRAMES={max_api_frames}，"
+            print(f"[analyze] 帧数 {len(frames)} 超过 API 可用配额（MAX_API_FRAMES={max_api_frames_total} - {num_teacher_refs}张老师参考图 = {max_api_frames}），"
                   f"均匀采样发送给 API: {picked_idx}")
         else:
             print(f"[analyze] 全部 {len(api_frames)} 张帧发送给 API")
