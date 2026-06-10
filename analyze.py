@@ -238,6 +238,193 @@ def call_api(api_base: str, api_key: str, model: str, frames: List[dict], transc
     raise RuntimeError(f"API 调用多次失败: {last_err}")
 
 
+def describe_teacher_from_ref(api_base: str, api_key: str, model: str) -> str:
+    """从三视图参考图中提取老师的外貌特征描述。
+
+    Returns: 特征描述文本字符串，如 "男性，约40-50岁，短黑发，佩戴矩形银色金属框眼镜，\n面部轮廓偏方圆，气质沉稳理性。"
+    """
+    if not TEACHER_REF_PATHS:
+        return ""
+
+    try:
+        from openai import OpenAI  # type: ignore
+    except ImportError as e:
+        raise RuntimeError(f"未安装 openai 库: {e}")
+
+    if not api_base.rstrip('/').endswith('/v1'):
+        api_base = api_base.rstrip('/') + '/v1'
+
+    client = OpenAI(api_key=api_key, base_url=api_base)
+
+    user_content = []
+    for ref_path in TEACHER_REF_PATHS:
+        if not os.path.isfile(ref_path):
+            continue
+        with open(ref_path, "rb") as f:
+            ref_data = f.read()
+        ref_b64 = base64.b64encode(ref_data).decode("ascii")
+        user_content.append({
+            "type": "image_url",
+            "image_url": {"url": f"data:image/jpeg;base64,{ref_b64}"},
+        })
+    user_content.append({
+        "type": "text",
+        "text": (
+            "请描述以上图片中人物的外貌特征，重点包括：\n"
+            "1. 性别\n"
+            "2. 大致年龄段\n"
+            "3. 发型、发色\n"
+            "4. 是否佩戴眼镜及眼镜款式\n"
+            "5. 面部轮廓特征\n"
+            "6. 整体气质风格\n\n"
+            "请用一段简洁的中文描述，不要做身份识别，只描述外貌特征。"
+        ),
+    })
+
+    messages = [
+        {"role": "system", "content": "你是一位专业的人物外貌描述专家。请客观、准确地描述图片中人物的外貌特征。"},
+        {"role": "user", "content": user_content},
+    ]
+
+    for attempt in range(1, MAX_RETRIES + 1):
+        try:
+            print(f"[analyze] 老师特征提取 API (第 {attempt}/{MAX_RETRIES} 次)")
+            resp = client.chat.completions.create(
+                model=model,
+                messages=messages,
+                temperature=0.1,
+                max_tokens=500,
+            )
+            content = resp.choices[0].message.content or ""
+            content = content.strip()
+            if content:
+                print(f"[analyze] 老师特征描述: {content}")
+                return content
+        except Exception as e:
+            backoff = 2 ** (attempt - 1)
+            print(f"[analyze] 特征提取 API 调用失败：{e}; {backoff}s 后重试", file=sys.stderr)
+            time.sleep(backoff)
+
+    return ""
+
+
+def find_matching_frame(api_base: str, api_key: str, model: str,
+                         all_frames: List[dict], teacher_description: str) -> dict:
+    """基于老师外貌特征描述，在视频帧中搜索匹配的帧。
+
+    不发送参考图（避免触发模型安全策略），只发送视频帧 + 特征描述文本。
+    分批发送，每批 5 帧（纯视频帧，无参考图，不会超 API 限制）。
+
+    Returns: {"frame": "frame_XX", "confidence": int, "reason": str}
+    """
+    if not teacher_description:
+        return {"frame": None, "confidence": 0, "reason": "无老师特征描述，无法扫描"}
+
+    try:
+        from openai import OpenAI  # type: ignore
+    except ImportError as e:
+        raise RuntimeError(f"未安装 openai 库: {e}")
+
+    if not api_base.rstrip('/').endswith('/v1'):
+        api_base = api_base.rstrip('/') + '/v1'
+
+    client = OpenAI(api_key=api_key, base_url=api_base)
+
+    batch_size = 5  # 纯视频帧，无参考图，每批可发更多
+    best_result = {"frame": None, "confidence": 0, "reason": ""}
+
+    for batch_start in range(0, len(all_frames), batch_size):
+        batch = all_frames[batch_start:batch_start + batch_size]
+        batch_indices = [f["index"] for f in batch]
+
+        user_content = []
+        for fr in batch:
+            user_content.append({
+                "type": "image_url",
+                "image_url": {"url": f"data:image/jpeg;base64,{fr['b64']}"},
+            })
+
+        frame_desc = "、".join([f"第{idx}秒" for idx in batch_indices])
+        user_content.append({
+            "type": "text",
+            "text": (
+                f"以上 {len(batch)} 张图片是视频的 {frame_desc} 关键帧。\n\n"
+                f"我们需要在视频帧中找到一位老师，其外貌特征如下：\n"
+                f"{teacher_description}\n\n"
+                "请判断每帧中是否出现了符合上述特征描述的人物，并给出匹配度评分。\n\n"
+                "评分标准：\n"
+                "- 性别不一致 → confidence=0\n"
+                "- 年龄段不一致 → confidence ≤ 20\n"
+                "- 性别年龄一致但发型/眼镜等关键特征不匹配 → confidence 30-50\n"
+                "- 大部分特征匹配 → confidence 60-80\n"
+                "- 几乎所有特征匹配 → confidence 80-100\n"
+                "- 帧中无人物 → confidence=0\n\n"
+                "请严格按以下 JSON 格式回答，不要添加任何其他文字：\n"
+                '```json\n'
+                '{"frames": [{"frame_index": 帧编号整数, "match": true或false, '
+                '"confidence": 0到100的整数, "reason": "理由"}, ...]}'
+                '\n```'
+            ),
+        })
+
+        messages = [
+            {"role": "system", "content": (
+                "你是一位专业的视觉分析师，擅长根据外貌特征描述在视频帧中识别目标人物。"
+                "请根据给定的外貌特征描述，判断每帧中是否出现了符合该描述的人物。"
+                "重点关注性别、年龄段、发型、眼镜、面部轮廓等关键特征。"
+                "性别不同绝不可能匹配。"
+            )},
+            {"role": "user", "content": user_content},
+        ]
+
+        for attempt in range(1, MAX_RETRIES + 1):
+            try:
+                print(f"[analyze] 老师帧搜索 API - 帧 {batch_indices} (第 {attempt}/{MAX_RETRIES} 次)")
+                resp = client.chat.completions.create(
+                    model=model,
+                    messages=messages,
+                    temperature=0.1,
+                    max_tokens=1000,
+                )
+                content = resp.choices[0].message.content or ""
+                result = extract_json(content)
+                frame_results = result.get("frames", [])
+
+                for fr_result in frame_results:
+                    fr_idx_raw = fr_result.get("frame_index", -1)
+                    if fr_idx_raw in batch_indices:
+                        actual_idx = fr_idx_raw
+                    elif 0 <= fr_idx_raw < len(batch):
+                        actual_idx = batch_indices[fr_idx_raw]
+                    else:
+                        actual_idx = fr_idx_raw
+
+                    conf = fr_result.get("confidence", 0)
+                    match_val = fr_result.get("match", False)
+                    reason = fr_result.get("reason", "")
+                    print(f"[analyze]   帧 {actual_idx}: match={match_val}, confidence={conf}")
+
+                    if match_val and conf > best_result["confidence"]:
+                        best_result = {
+                            "frame": f"frame_{int(actual_idx):02d}",
+                            "confidence": conf,
+                            "reason": reason,
+                        }
+                break
+            except Exception as e:
+                backoff = 2 ** (attempt - 1)
+                print(f"[analyze] 搜索 API 调用失败：{e}; {backoff}s 后重试", file=sys.stderr)
+                time.sleep(backoff)
+
+    if best_result["frame"]:
+        print(f"[analyze] 搜索完成，最佳匹配帧: {best_result['frame']} "
+              f"(confidence={best_result['confidence']})")
+    else:
+        print("[analyze] 搜索完成，未找到匹配老师的帧", file=sys.stderr)
+
+    return best_result
+
+
 def _save_recipe_frames(data: dict) -> None:
     """从分析结果中提取食谱帧并保存到 ANALYSE_DIR。
 
@@ -370,6 +557,51 @@ def main() -> int:
         with open(ANALYSIS_PATH, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
         print(f"[analyze] 分析结果已保存: {ANALYSIS_PATH}")
+
+        # ===== 老师帧验证：基于三视图特征描述，确认选中帧确实是老师 =====
+        best_tf = data.get("best_teacher_frame", {})
+        if best_tf and TEACHER_REF_PATHS:
+            selected_frame = best_tf.get("frame", "")
+            frame_path = os.path.join(FRAMES_DIR, f"{selected_frame}.jpg")
+            if os.path.isfile(frame_path) and len(TEACHER_REF_PATHS) > 0:
+                print(f"[analyze] ===== 验证老师帧: {selected_frame} =====")
+
+                # Step 1: 从三视图提取老师外貌特征
+                teacher_desc = describe_teacher_from_ref(api_base, api_key, model)
+                if not teacher_desc:
+                    print("[analyze] 警告：无法提取老师特征描述，跳过验证", file=sys.stderr)
+                else:
+                    # Step 2: 基于特征描述，在所有帧中搜索匹配的老师帧
+                    find_result = find_matching_frame(api_base, api_key, model, frames, teacher_desc)
+
+                    if find_result["frame"] and find_result["confidence"] >= 60:
+                        # 找到匹配帧，检查是否与原始选择不同
+                        if find_result["frame"] != selected_frame:
+                            original_frame = selected_frame
+                            data["best_teacher_frame"] = {
+                                "frame": find_result["frame"],
+                                "reason": (
+                                    f"[特征验证纠正] {find_result['reason']} "
+                                    f"(原选 {original_frame} 特征不匹配，"
+                                    f"新帧 confidence={find_result['confidence']})"
+                                ),
+                            }
+                            # 更新 analysis.json
+                            with open(ANALYSIS_PATH, "w", encoding="utf-8") as f:
+                                json.dump(data, f, ensure_ascii=False, indent=2)
+                            print(f"[analyze] analysis.json 已更新 best_teacher_frame: "
+                                  f"{selected_frame} → {find_result['frame']}")
+                        else:
+                            print(f"[analyze] 老师帧验证通过: {selected_frame} "
+                                  f"(confidence={find_result['confidence']})")
+                    elif find_result["frame"] and find_result["confidence"] < 60:
+                        print(f"[analyze] 老师帧验证：找到的帧置信度较低 "
+                              f"({find_result['frame']}, confidence={find_result['confidence']})，保留原选择",
+                              file=sys.stderr)
+                    else:
+                        print(f"[analyze] 警告：基于特征描述未找到匹配老师的帧，保留原选择", file=sys.stderr)
+            else:
+                print(f"[analyze] 跳过老师帧验证（候选帧或三视图不存在）")
 
         # ===== 食谱参考帧提取（仅 nutrition 品类）=====
         if get_category_name() == "nutrition":

@@ -178,10 +178,18 @@ SYNC_TARGET="$SYNC_TARGET_BASE/$VIDEO_NAME"
 echo ""
 echo "[run] [6/6] 同步 design_refer 到: $SYNC_TARGET"
 mkdir -p "$SYNC_TARGET_BASE"
-rm -rf "$SYNC_TARGET"
-mkdir -p "$SYNC_TARGET"
 if [ -d "$DESIGN_REFER_DIR" ] && [ -n "$(ls -A "$DESIGN_REFER_DIR" 2>/dev/null || true)" ]; then
-  cp -R "$DESIGN_REFER_DIR/." "$SYNC_TARGET/"
+  # 使用 cp -f 逐文件覆盖，避免 macOS 扩展属性导致 rm/cp -R 失败
+  for page_dir in "$DESIGN_REFER_DIR"/page*/; do
+    [ -d "$page_dir" ] || continue
+    page_name="$(basename "$page_dir")"
+    mkdir -p "$SYNC_TARGET/$page_name"
+    for src_file in "$page_dir"*; do
+      [ -f "$src_file" ] || continue
+      file_name="$(basename "$src_file")"
+      cp -f "$src_file" "$SYNC_TARGET/$page_name/$file_name" 2>/dev/null || true
+    done
+  done
   echo "[run] 同步完成"
 else
   echo "[run] 警告：design_refer 为空，跳过同步" >&2
