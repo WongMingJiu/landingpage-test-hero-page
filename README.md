@@ -173,8 +173,8 @@ output/{视频名称}/
 - [`transcribe.py`](transcribe.py) — 本地 Whisper ASR 转写
 - [`analyze.py`](analyze.py) — 多模态结构化分析
 - [`generate.py`](generate.py) — 多套落地页生图 Prompt 生成 + 同步
-- [`prompts/analyze_prompt.md`](prompts/analyze_prompt.md) — 分析阶段 Prompt 模板
-- [`prompts/generate_prompt.md`](prompts/generate_prompt.md) — 生成阶段 Prompt 模板
+- `assets/categories/{category}/analyze_prompt.md` — 分析阶段品类 Prompt 模板
+- `assets/categories/{category}/generate_prompt.md` — 生成阶段品类 Prompt 模板
 
 ## 常见问题
 

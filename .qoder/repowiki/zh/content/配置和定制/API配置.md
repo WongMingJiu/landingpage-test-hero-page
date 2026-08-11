@@ -10,15 +10,15 @@
 - [generate.py](file://generate.py)
 - [generate_image.py](file://generate_image.py)
 - [transcribe.py](file://transcribe.py)
-- [prompts/analyze_prompt.md](file://prompts/analyze_prompt.md)
-- [prompts/generate_prompt.md](file://prompts/generate_prompt.md)
+- [assets/categories/{category}/analyze_prompt.md](file://assets/categories/{category}/analyze_prompt.md)
+- [assets/categories/{category}/generate_prompt.md](file://assets/categories/{category}/generate_prompt.md)
 </cite>
 
 ## 更新摘要
 **变更内容**
 - 新增品牌logo引用系统，支持品牌标识参考图和品牌logo文件
 - 扩展多参考图像支持，增强图像生成的参考素材能力
-- 新增向后兼容的prompt文件支持，兼容prompt.txt格式
+- 新增向后兼容的prompt文件支持，兼容prompt.md格式
 - 更新API配置包括品牌logo路径常量(BRAND_LOGO_PATH)和多图像处理能力
 - **重要更新**：图像生成模块DEFAULT_SIZE从1024x1792调整为1024x1536，新增智能缩放功能（resize_to_target函数），以及Pillow库依赖升级至10.0.0版本
 
@@ -73,8 +73,8 @@ M --> E
 - [generate.py:38-68](file://generate.py#L38-L68)
 - [generate_image.py:130-167](file://generate_image.py#L130-L167)
 - [config.env:1-22](file://config.env#L1-L22)
-- [prompts/analyze_prompt.md:1-153](file://prompts/analyze_prompt.md#L1-L153)
-- [prompts/generate_prompt.md:1-130](file://prompts/generate_prompt.md#L1-L130)
+- [assets/categories/{category}/analyze_prompt.md:1-153](file://assets/categories/{category}/analyze_prompt.md#L1-L153)
+- [assets/categories/{category}/generate_prompt.md:1-130](file://assets/categories/{category}/generate_prompt.md#L1-L130)
 
 **章节来源**
 - [run.sh:1-197](file://run.sh#L1-L197)
@@ -137,7 +137,7 @@ M --> E
 
 - BRAND_LOGO_PATH
   - 作用：品牌logo文件路径常量，用于图像生成阶段的品牌一致性保障。
-  - 设置位置：generate_image.py中定义，指向assets/brand_logo.png。
+  - 设置位置：generate_image.py中定义，指向assets/categories/{category}/brand_logo.png。
   - 使用范围：图像生成阶段自动检测并添加品牌logo作为参考图。
   - 注意事项：文件必须存在且为PNG格式，确保品牌栏样式的一致性。
 
@@ -149,7 +149,7 @@ M --> E
 
 - BRAND_REFERENCE_SRC
   - 作用：品牌参考图源文件路径，用于HTML参考页面的展示。
-  - 设置位置：generate.py中定义，指向assets/brand_reference.png。
+  - 设置位置：generate.py中定义，指向assets/categories/{category}/brand_reference.png。
   - 使用范围：生成HTML参考页面时展示品牌栏样式。
   - 注意事项：文件必须存在，用于指导AI生成正确的品牌栏样式。
 
@@ -262,7 +262,7 @@ Save --> End(["结束"])
 **章节来源**
 - [analyze.py:211-272](file://analyze.py#L211-L272)
 - [analyze.py:76-125](file://analyze.py#L76-L125)
-- [prompts/analyze_prompt.md:1-153](file://prompts/analyze_prompt.md#L1-L153)
+- [assets/categories/{category}/analyze_prompt.md:1-153](file://assets/categories/{category}/analyze_prompt.md#L1-L153)
 
 ### 文本生成模块（generate.py）
 - 功能概述
@@ -272,7 +272,7 @@ Save --> End(["结束"])
   - 重试机制：最多3次，指数退避。
   - 温度参数：0.6，偏向创造性输出。
   - 品牌参考图：自动生成HTML参考页面，展示品牌栏样式。
-  - 向后兼容：支持prompt.md和prompt.txt两种文件格式。
+  - 向后兼容：支持prompt.md和prompt.md两种文件格式。
 - 错误处理
   - 缺少必要环境变量时直接报错退出。
   - HTML渲染优先使用markdown库，失败则回退到简易渲染器。
@@ -304,7 +304,7 @@ GE-->>GE : 保存 Markdown 与 HTML
 
 **章节来源**
 - [generate.py:619-712](file://generate.py#L619-L712)
-- [prompts/generate_prompt.md:1-130](file://prompts/generate_prompt.md#L1-L130)
+- [assets/categories/{category}/generate_prompt.md:1-130](file://assets/categories/{category}/generate_prompt.md#L1-L130)
 - [generate.py:420-513](file://generate.py#L420-L513)
 - [generate.py:570-614](file://generate.py#L570-L614)
 
@@ -317,7 +317,7 @@ GE-->>GE : 保存 Markdown 与 HTML
   - **重要更新** 默认尺寸：1024x1536（竖版1080x1920），优化移动端显示效果。
   - 重试机制：最多3次，指数退避（2^attempt-1秒）。
   - 超时设置：600秒，适应图像生成较长耗时。
-  - 品牌logo支持：自动检测assets/brand_logo.png并作为参考图。
+  - 品牌logo支持：自动检测assets/categories/{category}/brand_logo.png并作为参考图。
   - 多参考图像：支持多张参考图（包括品牌logo和老师参考图）。
   - **重要更新** 智能缩放功能：resize_to_target函数实现等比缩放和高度限制。
 - 错误处理
@@ -338,7 +338,7 @@ CheckKey --> |否| ExitErr["报错并退出"]
 CheckKey --> |是| ScanPages["扫描视频目录<br/>查找 pageN 子目录"]
 ScanPages --> FilterPages["过滤指定页面<br/>或处理全部"]
 FilterPages --> ProcessPage["处理单个 page"]
-ProcessPage --> ReadPrompt["读取 prompt.md/prompt.txt"]
+ProcessPage --> ReadPrompt["读取 prompt.md/prompt.md"]
 ReadPrompt --> CheckFiles{"文件是否存在？"}
 CheckFiles --> |否| PageFail["标记失败并继续"]
 CheckFiles --> |是| CheckBrandLogo["检查品牌logo文件"]
@@ -418,17 +418,17 @@ G --> O
 GI --> REQ["requests 库"]
 T --> W["openai-whisper 库"]
 GI --> PIL["Pillow>=10.0.0"]
-A --> P1["prompts/analyze_prompt.md"]
-G --> P2["prompts/generate_prompt.md"]
-G --> BR["assets/brand_reference.png"]
-GI --> BL["assets/brand_logo.png"]
+A --> P1["assets/categories/{category}/analyze_prompt.md"]
+G --> P2["assets/categories/{category}/generate_prompt.md"]
+G --> BR["assets/categories/{category}/brand_reference.png"]
+GI --> BL["assets/categories/{category}/brand_logo.png"]
 ```
 
 **图表来源**
 - [run.sh:42-52](file://run.sh#L42-L52)
 - [requirements.txt:1-6](file://requirements.txt#L1-L6)
-- [prompts/analyze_prompt.md:1-153](file://prompts/analyze_prompt.md#L1-L153)
-- [prompts/generate_prompt.md:1-130](file://prompts/generate_prompt.md#L1-L130)
+- [assets/categories/{category}/analyze_prompt.md:1-153](file://assets/categories/{category}/analyze_prompt.md#L1-L153)
+- [assets/categories/{category}/generate_prompt.md:1-130](file://assets/categories/{category}/generate_prompt.md#L1-L130)
 
 **章节来源**
 - [run.sh:42-52](file://run.sh#L42-L52)
@@ -535,19 +535,19 @@ GI --> BL["assets/brand_logo.png"]
 
 - 品牌logo文件缺失
   - 现象：图像生成时仅使用老师参考图，品牌栏样式可能不一致。
-  - 排查：确认assets/brand_logo.png存在且为PNG格式，检查文件权限。
+  - 排查：确认assets/categories/{category}/brand_logo.png存在且为PNG格式，检查文件权限。
   - 参考
     - [generate_image.py:244-250](file://generate_image.py#L244-L250)
 
 - 品牌参考图复制失败
   - 现象：文本生成阶段复制品牌参考图到各page目录失败。
-  - 排查：检查assets/brand_reference.png存在性、磁盘空间、目标目录权限。
+  - 排查：检查assets/categories/{category}/brand_reference.png存在性、磁盘空间、目标目录权限。
   - 参考
     - [generate.py:601-607](file://generate.py#L601-L607)
 
 - 向后兼容的prompt文件处理
   - 现象：文本生成阶段无法找到prompt.md文件。
-  - 排查：确认存在prompt.md或prompt.txt文件，检查文件编码和格式。
+  - 排查：确认存在prompt.md或prompt.md文件，检查文件编码和格式。
   - 参考
     - [generate.py:587-590](file://generate.py#L587-L590)
 
@@ -673,7 +673,7 @@ GI --> BL["assets/brand_logo.png"]
 - BRAND_LOGO_PATH
   - 类型：字符串（路径）
   - 必填：否
-  - 默认值：assets/brand_logo.png
+  - 默认值：assets/categories/{category}/brand_logo.png
   - 用途：品牌logo文件路径，用于图像生成阶段的品牌一致性保障
   - 参考
     - [generate_image.py:29](file://generate_image.py#L29)
@@ -689,7 +689,7 @@ GI --> BL["assets/brand_logo.png"]
 - BRAND_REFERENCE_SRC
   - 类型：字符串（路径）
   - 必填：否
-  - 默认值：assets/brand_reference.png
+  - 默认值：assets/categories/{category}/brand_reference.png
   - 用途：品牌参考图源文件路径，用于HTML参考页面展示
   - 参考
     - [generate.py:46](file://generate.py#L46)

@@ -47,6 +47,8 @@ DEFAULT_SIZE = "1024x1536"
 # 输出图片尺寸约束（宽度固定 750，高度等比但不超过 1200）
 OUTPUT_TARGET_WIDTH = 750
 OUTPUT_MAX_HEIGHT = 1200
+# 输出图片最大体积（KB）
+OUTPUT_MAX_SIZE_KB = 500
 
 MAX_RETRIES = 3
 INITIAL_BACKOFF = 2.0  # 秒
@@ -141,18 +143,52 @@ def resize_to_target(
     image_path: Path,
     target_width: int = OUTPUT_TARGET_WIDTH,
     max_height: int = OUTPUT_MAX_HEIGHT,
+    max_size_kb: int = OUTPUT_MAX_SIZE_KB,
 ) -> tuple:
     """将图片等比缩放到 target_width 宽，若高度超过 max_height 则截断为 max_height。
+    保存为 JPEG 格式并压缩到 max_size_kb 以内。
     返回 (new_w, new_h)。
     """
+    import io
     img = Image.open(image_path)
+    # 转为 RGB（JPEG 不支持 RGBA）
+    if img.mode in ("RGBA", "P", "LA"):
+        img = img.convert("RGB")
     w, h = img.size
     new_w = target_width
     new_h = int(round(h * (target_width / w)))
     if new_h > max_height:
         new_h = max_height
     img = img.resize((new_w, new_h), Image.LANCZOS)
-    img.save(image_path)
+
+    # 确定输出路径（替换原 PNG 后缀为 JPG，或直接使用原路径）
+    jpg_path = image_path.with_suffix(".jpg")
+    max_bytes = max_size_kb * 1024
+
+    # 递减 quality 直到文件体积达标
+    for quality in (90, 85, 80, 75, 70, 65, 60, 55, 50):
+        buf = io.BytesIO()
+        img.save(buf, "JPEG", quality=quality, optimize=True, progressive=True)
+        if buf.tell() <= max_bytes:
+            break
+    else:
+        # 最低质量仍超标，进一步缩小尺寸
+        ratio = (max_bytes / buf.tell()) ** 0.5
+        new_w = int(new_w * ratio)
+        new_h = int(new_h * ratio)
+        img = img.resize((new_w, new_h), Image.LANCZOS)
+        buf = io.BytesIO()
+        img.save(buf, "JPEG", quality=70, optimize=True, progressive=True)
+
+    with open(jpg_path, "wb") as f:
+        f.write(buf.getvalue())
+
+    # 如果原路径是 .png，删除旧文件
+    if image_path.suffix.lower() == ".png" and image_path != jpg_path:
+        image_path.unlink(missing_ok=True)
+
+    final_size_kb = jpg_path.stat().st_size // 1024
+    print(f"  - JPEG 压缩：quality={quality}, 文件体积 {final_size_kb}KB")
     return new_w, new_h
 
 
@@ -331,7 +367,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "video_name",
-        help="视频名称（对应 ~/workspace/landing-page-manage/唱歌项目/{视频名}/）",
+        help=f"视频名称（对应 ~/workspace/landing-page-manage/{_category_folder}/{{视频名}}/）",
     )
     parser.add_argument(
         "--pages",
@@ -363,12 +399,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--input-root",
         default=str(DEFAULT_INPUT_ROOT),
-        help="素材根目录（默认 ~/workspace/landing-page-manage/唱歌项目）",
+        help=f"素材根目录（默认 ~/workspace/landing-page-manage/{_category_folder}）",
     )
     parser.add_argument(
         "--output-root",
         default=str(DEFAULT_OUTPUT_ROOT),
-        help="输出根目录（默认 ~/workspace/landing-page-manage/唱歌项目/landing-page）",
+        help=f"输出根目录（默认 ~/workspace/landing-page-manage/{_category_folder}/landing-page）",
     )
     return parser.parse_args()
 
@@ -435,7 +471,7 @@ def main() -> int:
     success = 0
     failed = 0
     for page_dir in pages:
-        out_page_path = output_video_dir / f"{page_dir.name}.png"
+        out_page_path = output_video_dir / f"{page_dir.name}.jpg"
         try:
             ok = process_page(
                 page_dir=page_dir,

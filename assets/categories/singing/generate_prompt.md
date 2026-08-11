@@ -10,6 +10,13 @@
 - **语言直白**：不用营销黑话，说人话，一看就懂
 - **视觉层次分明**：通过字号、颜色、间距区分信息优先级
 
+## 元素比例与防压缩约束（必须严格遵守）
+- **老师形象必须占据充足面积**：老师半身照宽度不得小于画布宽度的 35%，高度不得小于画布高度的 25%。老师形象是落地页的核心视觉锤，绝不能被压缩成小图
+- **每个元素必须有足够呼吸空间**：禁止为了塞入更多元素而压缩单个元素的尺寸。宁可减少次要元素的数量，也要保证主要元素（老师、主标题）的尺寸充分
+- **信息密度控制**：每个布局区块（顶部/中部/底部）最多放置 2-3 个元素，避免元素拥挤
+- **禁止缩变形的描述**：在生图 Prompt 中必须加入 "Do NOT compress, shrink, or distort any element. All figures and text must maintain natural proportions and generous spacing." 的约束
+- **老师形象清晰度**：老师半身照必须清晰锐利，面部特征清楚，对焦精准。在 Prompt 中必须加入 "The teacher must be in sharp focus, well-lit, with clear facial features and high detail rendering." 的约束。禁止老师形象模糊、像素化、或显得低清
+
 ## 视觉风格参考（基于真实落地页样本）
 
 > **设计哲学**：以下布局**仅为灵感参考**，不是必选模板。设计风格应**以视频分析得出的以下维度为主导**：
@@ -132,12 +139,79 @@
 - 不要自由发挥老师的外貌和服装
 - **生图 Prompt 中禁止写死具体服装颜色/款式文字**：由于生成 Prompt 的 LLM 无法看到 teacher_ref.jpg 图片，不要在英文 Prompt 中描述具体的着装颜色（如"red jacket""blue shirt"），而应使用"replicate exact appearance from teacher_ref.jpg"来指示 gpt-image-2 直接从图片获取着装信息
 
+### 多人/分屏 teacher_ref.jpg 兜底（防错位）
+
+若 teacher_ref.jpg 中出现**多个人物**或**上下/左右分屏布局**（常见于视频中老师与学员/嘉宾/对照人同框）：
+
+1. **必须使用 teacher_face_ref_1.jpg / teacher_face_ref_2.jpg 的面部特征作为唯一身份判定依据**，锁定画面中哪个人物才是老师本人
+2. **服装、姿态、配饰只能取自“人脸与三视图匹配”的那个人物**，**必须忽略其他人物的全部服装信息**
+3. **严禁**把画面中其他人（嘉宾、主持、学员、对照人物等）的衣着错配到老师身上
+4. 若难以判断哪个才是老师，则**宁可采用 face_ref 中老师的上身服装描述**（领口、领型可见部分），也不要拼接另一个人物的衣着
+5. 在生图 Prompt 中明确加一句："If teacher_ref.jpg shows multiple people or split-screen layout, use clothing/posture ONLY from the person whose face matches teacher_face_ref_*.jpg, IGNORE all other people's clothing."
+
 ## 重要约束
 - 本课程为**纯线上课程**，不得出现"线下""面授""到场"等暗示线下的文案
 - 底部价值承诺条**不做按钮**，**不使用**"立即""点击""领取""报名""试听"等点击引导词
 - 内容列表仅在分析数据 `content_list`/`song_list` 不为 null 时才可使用
 - 不需要包含价格和赠品信息
 - 装饰元素可使用：{DECORATION_ELEMENTS}
+
+## 课程曲目白名单（必须严格遵守）
+
+落地页中展示的所有歌曲名称**只能**从以下白名单中选取，不得使用视频分析中提取的其他歌曲名：
+
+> 《送别》《鸿雁》《天之大》《搀扶》《这世界那么多人》《在那遥远的地方》《我和我的祖国》
+
+**匹配规则**：
+1. 若视频分析提取的 `song_list` 中有与白名单**同名**的歌曲，直接使用
+2. 若提取的歌曲名**不在白名单中**，则从白名单中**随机选取**等量歌曲替换
+3. 若 `song_list` 为 null，则直接从白名单中选取 5-6 首使用
+4. 每个变体可选取不同的歌曲组合，增加多样性
+
+## 广告法违规词禁用（必须严格遵守）
+
+以下词汇及同义变体**禁止出现在任何文案中**（包括主标题、副标题、痛点/卖点、效果标签、底部承诺条等所有文字区域）：
+
+### 绝对化/极限用语
+最、最佳、最好、最优、最大、最强、第一、唯一、首选、顶级、顶尖、极致、绝对、国家级、世界级、全网最低、史无前例、万能、全国领先、全国第一、首席、冠军、先行者
+
+### 虚假/夸大承诺
+保证、保证效果、100%、包教包会、包学会、永远、永久、根治、一步到位、速成、立竿见影、药到病除、零风险、无副作用、有效
+
+### 权威性滥用
+驰名商标、国家认可、央视推荐、政府指定、专家推荐、名医、大师、人民大会堂（除非分析数据中明确提及）
+
+### 迷信用语
+殿堂
+
+### 诱导/恐惧营销
+不买后悔、错过再无、限时秒杀、仅剩X名额、不买就亏了、别人都在学、不学就落后、死
+
+### 功效承诺类
+告别、摆脱、改善（用于暗示疗效时禁止，如"改善失眠"；用于中性描述如"改善唱功"可用）
+
+### 图片内容禁令
+- 图片中**不得出现二维码**
+
+### 替代表述建议
+- "最好的" → 用具体描述，如"专业的""系统的"
+- "包教包会" → "轻松入门""跟着学就会"
+- "保证效果" → "学员反馈""真实变化"
+- "速成" → "高效学习""快速上手"
+- "告别XX" → "远离XX困扰""轻松解决XX"
+- "全国领先" → 删除，用具体事实描述
+
+## 兜底痛点/卖点/利益点（仅当分析数据不足时使用）
+
+当视频分析结果中 `pain_points` / `selling_points` / `benefits` 为空或条目不足时，从以下兜底内容中选取补充。**优先使用视频分析提取的内容，兜底内容仅作为补充和灵感来源。**
+
+**兜底痛点库**：大白嗓、高音上不去、扯嗓子、气息不稳、唱歌费力、伤嗓子、怯于开唱、不知从何学起、线下上课不方便、自学没人带练、效果存疑
+
+**兜底卖点库**：名师亲授、0基础、为中老年制定、课程可回放、随时随地能学、专业助教、社群陪学、科学发声
+
+**兜底利益点库**：告别大白嗓、气息稳、高音稳、掌握科学发声、唱歌不费嗓、自信开唱、退休圆歌唱梦
+
+> 每个变体选取 3-5 个最相关的痛点/卖点即可，不必全部使用。
 
 ## 每区域字数参考限制
 
@@ -220,6 +294,8 @@ analysis_json
 7. 底部承诺条使用强视觉色彩但非按钮
 8. 每套 Prompt 中的中文文案可以有差异（主标题、副标题、痛点/卖点用语可不同）
 9. 整体像真实的中国课程营销落地页
+10. **防压缩**：必须在 Prompt 中包含以下约束语句："The teacher figure must be prominently sized, occupying at least 35% of the canvas width and 25% of the height. Do NOT compress, shrink, or crowd any element. Maintain generous spacing between all elements. Prioritize element quality over quantity — fewer, larger, well-spaced elements are preferred over many small cramped ones."
+11. **老师清晰度**：必须在 Prompt 中包含以下约束语句："The teacher figure must be rendered in sharp focus with high detail and clear facial features. The teacher should be the visual focal point of the composition, well-lit and crisp, NOT blurry, pixelated, or low-resolution."
 
 ### 每套 Prompt 的中文文字清单格式：
 ```
@@ -238,6 +314,6 @@ IMPORTANT: When using any of these prompts, attach the following reference image
 2. "assets/teacher_face_ref_1.jpg" - face features ONLY (ignore clothing and hairstyle in this image)
 3. "assets/teacher_face_ref_2.jpg" - face features ONLY (ignore clothing and hairstyle in this image)
 4. "assets/brand_logo.png" - brand logo badge reference (small compact logo, place at top corner or top center, do NOT expand into a full-width bar, do NOT let brand colors dominate the overall design)
-5. Optionally attach 1-2 images from "assets/examples/" as overall style reference
+5. Optionally attach 1-2 images from "{EXAMPLES_DIR}" as overall style reference
 
 ⚠️ Reference image priority: teacher_ref.jpg > face refs. If there is any conflict in clothing or hairstyle between teacher_ref and face refs, ALWAYS follow teacher_ref.jpg.

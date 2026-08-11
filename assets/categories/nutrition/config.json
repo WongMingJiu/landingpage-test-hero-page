@@ -1,6 +1,7 @@
 {
   "display_name": "健康营养",
   "default_teacher_name": "王溪",
+    "teacher_gender": "male",
   "variant_count": 10,
   "description": "中老年健康营养教学课程，强调营养知识、食疗方案、健康管理等。",
   "applicable_inspirations": "A, C, D, E, F, G, I, J, K",
@@ -9,5 +10,18 @@
   "content_list_description": "具体食材、营养知识点、食疗方案等",
   "decoration_elements": "蔬果图标🥦🍎、健康心形❤️、绿叶元素🌿、阳光光晕",
   "pain_points": ["指标异常", "体质变差", "体重增加", "作息不规律", "情绪异常", "营养失衡", "食欲不振", "失眠多梦", "头昏脑涨", "脸色发黄", "皮肤变差", "疲劳乏力"],
-  "selling_points": ["针对管理精准改善", "正常指标强身健体", "了解饮食营养误区", "改善日常饮食习惯", "减掉负担安神助眠"]
+  "selling_points": ["针对管理精准改善", "正常指标强身健体", "了解饮食营养误区", "改善日常饮食习惯", "减掉负担安神助眠"],
+  "banned_words": ["食养", "全国领先", "全国第一", "人民大会堂", "包教包会", "立竿见影", "药到病除", "零风险", "无副作用", "限时秒杀", "不买后悔", "错过再无", "缓解疼痛", "驰名商标", "自愈", "未病", "医治"],
+  "reference_frame_types": [
+    {
+      "name": "recipe",
+      "outer_key": "recipe_frames",
+      "frame_indices_key": "recipe_frame_indices",
+      "description_key": "recipe_description",
+      "output_prefix": "recipe_ref",
+      "max_count": 3,
+      "max_size_kb": 200,
+      "api_prompt": "以下是食谱参考图，请从中提取具体的食谱名称、菜名、食材信息，用于落地页文案中："
+    }
+  ]
 }

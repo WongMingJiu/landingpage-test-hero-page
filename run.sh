@@ -16,7 +16,7 @@
 # 输出 (output/{视频名称}/ 目录):
 #   - video_clip_result/   关键帧 / 音频 / 视频片段 / 转写文本
 #   - analyse_result/      analysis.json + 设计方案 MD/HTML
-#   - design_refer/pageN/  每个变体的 prompt.txt + 参考图
+#   - design_refer/pageN/  每个变体的 prompt.md + 参考图
 # =============================================================================
 
 set -euo pipefail
@@ -48,6 +48,9 @@ if [ -z "$VIDEO_NAME" ]; then
 fi
 
 # ---------- 加载配置 ----------
+# 快照外部传入的品类变量（优先级高于 config.env）
+_PRE_CATEGORY_NAME="${CATEGORY_NAME:-}"
+_PRE_CATEGORY_FOLDER_NAME="${CATEGORY_FOLDER_NAME:-}"
 CONFIG_FILE="$SCRIPT_DIR/config.env"
 if [ -f "$CONFIG_FILE" ]; then
   echo "[run] 加载配置: $CONFIG_FILE"
@@ -60,6 +63,15 @@ else
   echo "[run] 请确保 config.env 存在并填入正确的 API 配置" >&2
   exit 1
 fi
+# 外部传入的品类变量优先覆盖 config.env
+if [ -n "$_PRE_CATEGORY_NAME" ]; then
+  CATEGORY_NAME="$_PRE_CATEGORY_NAME"
+fi
+if [ -n "$_PRE_CATEGORY_FOLDER_NAME" ]; then
+  CATEGORY_FOLDER_NAME="$_PRE_CATEGORY_FOLDER_NAME"
+fi
+export CATEGORY_NAME CATEGORY_FOLDER_NAME
+echo "[run] 品类: CATEGORY_NAME=$CATEGORY_NAME CATEGORY_FOLDER_NAME=$CATEGORY_FOLDER_NAME"
 
 # ---------- 依赖检查 ----------
 command -v ffmpeg >/dev/null 2>&1 || {
@@ -72,7 +84,8 @@ command -v python3 >/dev/null 2>&1 || {
 }
 
 # ---------- 准备输出目录 ----------
-OUTPUT_DIR="$SCRIPT_DIR/output/$VIDEO_NAME"
+# 支持外部覆盖 OUTPUT_DIR（批量验证可输出到自定义目录）
+OUTPUT_DIR="${OUTPUT_DIR:-$SCRIPT_DIR/output/$VIDEO_NAME}"
 VIDEO_CLIP_DIR="$OUTPUT_DIR/video_clip_result"
 ANALYSE_DIR="$OUTPUT_DIR/analyse_result"
 DESIGN_REFER_DIR="$OUTPUT_DIR/design_refer"
@@ -173,6 +186,10 @@ python3 generate.py
 }
 
 # ---------- 6) 同步 design_refer 到落地页管理仓库 ----------
+if [ "${SKIP_SYNC:-0}" = "1" ]; then
+  echo ""
+  echo "[run] [6/6] SKIP_SYNC=1，跳过 design_refer 同步"
+else
 SYNC_TARGET_BASE="$HOME/workspace/landing-page-manage/${CATEGORY_FOLDER_NAME:-唱歌}"
 SYNC_TARGET="$SYNC_TARGET_BASE/$VIDEO_NAME"
 echo ""
@@ -194,6 +211,7 @@ if [ -d "$DESIGN_REFER_DIR" ] && [ -n "$(ls -A "$DESIGN_REFER_DIR" 2>/dev/null |
 else
   echo "[run] 警告：design_refer 为空，跳过同步" >&2
 fi
+fi
 
 echo ""
 echo "[run] ========== 全部完成 =========="
@@ -201,4 +219,6 @@ echo "[run] 视频名称:   $VIDEO_NAME"
 echo "[run] 视频/帧/音频/转写:  $VIDEO_CLIP_DIR"
 echo "[run] 分析与设计方案:     $ANALYSE_DIR"
 echo "[run] 生图变体素材:       $DESIGN_REFER_DIR"
-echo "[run] 同步目标:           $SYNC_TARGET"
+if [ "${SKIP_SYNC:-0}" != "1" ]; then
+  echo "[run] 同步目标:           $SYNC_TARGET"
+fi

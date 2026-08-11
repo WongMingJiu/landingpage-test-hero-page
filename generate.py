@@ -3,7 +3,7 @@
 """
 落地页设计方案生成脚本
 - 读取 ANALYSE_DIR/analysis.json
-- 使用 prompts/generate_prompt.md 作为 system prompt
+- 使用 assets/categories/{category}/generate_prompt.md 作为 system prompt
   (将占位符 analysis_json 替换为实际的 JSON 字符串)
 - 调用 OpenAI 兼容 API（纯文本）
 - 输出 ANALYSE_DIR/landing_page_design.md
@@ -30,9 +30,9 @@ import re
 import shutil
 import sys
 import time
-from typing import List, Tuple
+from typing import List, Tuple, Dict, Any
 
-from category_config import get_prompt_path, load_category_config, get_brand_reference_path, get_teacher_ref_paths, get_category_name
+from category_config import get_prompt_path, load_category_config, get_brand_reference_path, get_teacher_ref_paths, get_category_name, get_examples_dir
 
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -58,6 +58,10 @@ MAX_RETRIES = 3
 def read_text(path: str) -> str:
     with open(path, "r", encoding="utf-8") as f:
         return f.read()
+
+
+# 老师参考帧选择完全交给 LLM analyze 阶段的 prompt 规则（身份匹配 + 剔除多人 + 选最早），
+# 本文件不再做 OpenCV 多脸检测 / 邻近换帧 / 裁剪兜底，避免后置动作覆盖 LLM 选择。
 
 
 def describe_teacher_outfit(image_path: str, api_base: str, api_key: str, model: str) -> str:
@@ -124,7 +128,17 @@ def describe_teacher_outfit(image_path: str, api_base: str, api_key: str, model:
     raise RuntimeError(f"视觉预处理多次失败: {last_err}")
 
 
-def call_api(api_base: str, api_key: str, model: str, system_prompt: str, recipe_images: List[str] = None) -> str:
+def call_api(api_base: str, api_key: str, model: str, system_prompt: str,
+             reference_images: List[Dict[str, Any]] = None) -> str:
+    """调用 LLM API 生成 Hero 文案。
+
+    reference_images 结构（按品类 reference_frame_types 配置驱动）：
+      [
+        {"api_prompt": "以下是 XX 参考图...", "images": ["/path/a.jpg", ...]},
+        ...
+      ]
+    无参考图时传 None 或空列表。
+    """
     try:
         from openai import OpenAI  # type: ignore
     except ImportError as e:
@@ -136,24 +150,27 @@ def call_api(api_base: str, api_key: str, model: str, system_prompt: str, recipe
 
     client = OpenAI(api_key=api_key, base_url=api_base)
 
-    # 如果有食谱参考图，使用多模态消息格式
-    if recipe_images:
+    # 过滤空组
+    ref_groups = [g for g in (reference_images or []) if g.get("images")]
+
+    # 如果有任何参考图，使用多模态消息格式
+    if ref_groups:
         user_content = []
-        user_content.append({
-            "type": "text",
-            "text": "请基于上方的输入数据，按照输出要求生成完整的落地页 Hero 区域设计方案。\n\n"
-                    "以下是食谱参考图，请从中提取具体的食谱名称、菜名、食材信息，用于落地页文案中：",
-        })
-        for img_path in recipe_images:
-            with open(img_path, "rb") as f:
-                img_b64 = base64.b64encode(f.read()).decode("utf-8")
-            ext = os.path.splitext(img_path)[1].lower().lstrip(".") or "jpeg"
-            if ext == "jpg":
-                ext = "jpeg"
-            user_content.append({
-                "type": "image_url",
-                "image_url": {"url": f"data:image/{ext};base64,{img_b64}"},
-            })
+        base_text = "请基于上方的输入数据，按照输出要求生成完整的落地页 Hero 区域设计方案。"
+        user_content.append({"type": "text", "text": base_text})
+        for group in ref_groups:
+            api_prompt = group.get("api_prompt", "以下是参考图：")
+            user_content.append({"type": "text", "text": "\n\n" + api_prompt})
+            for img_path in group.get("images", []):
+                with open(img_path, "rb") as f:
+                    img_b64 = base64.b64encode(f.read()).decode("utf-8")
+                ext = os.path.splitext(img_path)[1].lower().lstrip(".") or "jpeg"
+                if ext == "jpg":
+                    ext = "jpeg"
+                user_content.append({
+                    "type": "image_url",
+                    "image_url": {"url": f"data:image/{ext};base64,{img_b64}"},
+                })
         messages = [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_content},
@@ -692,7 +709,7 @@ def extract_variants(md_text: str) -> List[Tuple[int, str, str]]:
 def write_design_refer(variants: List[Tuple[int, str, str]], page_offset: int = 0) -> int:
     """将每个变体的 prompt + 老师参考图 + 品牌参考图写入 DESIGN_REFER_DIR/pageN/。
 
-    page_offset：页码起始偏移（batch=1 传 0 → page1..pageK；batch=2 传 5 → page6..page(5+K)）。
+    page_offset：页码起始偏移（batch=1 传 0 → page1..pageK；batch=2 传 K → page{K+1}..page{2K}）。
     返回成功写入的页数。
     """
     if not variants:
@@ -708,7 +725,21 @@ def write_design_refer(variants: List[Tuple[int, str, str]], page_offset: int = 
         page_dir = os.path.join(DESIGN_REFER_DIR, f"page{page_idx}")
         os.makedirs(page_dir, exist_ok=True)
 
-        # 1) prompt.md
+        # 1) prompt.md - 强制修正老师性别（来自品类配置）
+        _cat_cfg = load_category_config()
+        _teacher_gender = _cat_cfg.get("teacher_gender", "")
+        if _teacher_gender == "male":
+            prompt_text = prompt_text.replace("female teacher", "male teacher")
+            prompt_text = prompt_text.replace("female Teacher", "male Teacher")
+        elif _teacher_gender == "female":
+            prompt_text = prompt_text.replace("male teacher", "female teacher")
+            prompt_text = prompt_text.replace("male Teacher", "female Teacher")
+        # 1.0) 禁用词过滤（来自品类配置 banned_words）
+        _banned_words = _cat_cfg.get("banned_words", [])
+        for _bw in _banned_words:
+            if _bw in prompt_text:
+                print(f"[generate] 禁用词过滤：移除 \"{_bw}\"")
+                prompt_text = prompt_text.replace(_bw, "")
         prompt_path = os.path.join(page_dir, "prompt.md")
         with open(prompt_path, "w", encoding="utf-8") as f:
             f.write(prompt_text.rstrip() + "\n")
@@ -819,7 +850,7 @@ def build_existing_variants_summary(page_count: int = 5) -> str:
     body = "\n".join(items)
     return (
         "\n## ⚠️ 已有方案去重约束（batch 2 模式）\n\n"
-        "以下是上一轮已生成的 5 套方案方向。本轮新生成的 5 套方案"
+        f"以下是上一轮已生成的 {page_count} 套方案方向。本轮新生成的 {page_count} 套方案"
         "**必须**与它们在 **风格名称、配色方案、布局结构** 三个维度上 **完全不同**，"
         "不允许简单换色或换标题。请主动选择灵感库中尚未使用的布局思路（例如 F~K），"
         "或自由创造全新布局以拉开差异化。\n\n"
@@ -837,7 +868,7 @@ def main() -> int:
         "--batch",
         type=int,
         default=1,
-        help="批次：1=生成 page1-page5（默认）；2=读取已有 page1-5 作为去重参考，输出到 page6-page10",
+        help="批次：1=生成 page1-pageN（默认）；2=读取已有 page1-pageN 作为去重参考，输出下一批 page",
     )
     args, _unknown = parser.parse_known_args()
     batch = max(1, int(args.batch))
@@ -893,6 +924,7 @@ def main() -> int:
     prompt_tpl = prompt_tpl.replace("{DECORATION_ELEMENTS}", category_config.get("decoration_elements", ""))
     prompt_tpl = prompt_tpl.replace("{PAIN_POINTS_JSON}", json.dumps(category_config.get("pain_points", []), ensure_ascii=False))
     prompt_tpl = prompt_tpl.replace("{SELLING_POINTS_JSON}", json.dumps(category_config.get("selling_points", []), ensure_ascii=False))
+    prompt_tpl = prompt_tpl.replace("{EXAMPLES_DIR}", get_examples_dir())
 
     # batch=2 时构建去重摘要，注入到 prompt 模板的 {existing_variants_summary} 占位符
     existing_summary = ""
@@ -902,7 +934,7 @@ def main() -> int:
             print(f"[generate] batch={batch}：已构建去重摘要（{len(existing_summary)} 字）")
         else:
             print(
-                f"[generate] 警告：batch={batch} 但未在 {DESIGN_REFER_DIR} 下找到已有 page1-5，"
+                f"[generate] 警告：batch={batch} 但未在 {DESIGN_REFER_DIR} 下找到已有 page1-page{variant_count}，"
                 "去重摘要为空\n",
                 file=sys.stderr,
             )
@@ -919,8 +951,9 @@ def main() -> int:
     os.makedirs(ANALYSE_DIR, exist_ok=True)
     src_path = os.path.join(VIDEO_CLIP_DIR, f"{best_frame}.jpg")
     if os.path.isfile(src_path):
+        # 老师参考帧直接复制 LLM 选中的帧，不再做多脸检测/邻近换帧/裁剪兜底。
         shutil.copy2(src_path, TEACHER_REF_PATH)
-        print(f"[generate] 老师参考图已保存: {TEACHER_REF_PATH} (来自 {best_frame})")
+        print(f"[generate] 老师参考图已保存: {TEACHER_REF_PATH} (来自 {best_frame}.jpg)")
     else:
         # 回退到 frame_00
         fallback = os.path.join(VIDEO_CLIP_DIR, "frame_00.jpg")
@@ -942,9 +975,24 @@ def main() -> int:
         except Exception as e:
             print(f"[generate] 警告：视觉预处理失败，将不注入着装描述：{e}", file=sys.stderr)
 
-    # 组装 system_prompt（在视觉预处理之后，注入着装描述）
+    # 组装 system_prompt（在视觉预处理之后，注入着装描述和性别约束）
     system_prompt = prompt_tpl.replace("analysis_json", analysis_str)
     system_prompt = system_prompt.replace("{existing_variants_summary}", existing_summary)
+
+    # 注入老师性别约束（来自品类配置）
+    teacher_gender = category_config.get("teacher_gender", "")
+    gender_instruction = ""
+    if teacher_gender:
+        gender_label = "男" if teacher_gender == "male" else "女"
+        gender_en = "male" if teacher_gender == "male" else "female"
+        gender_instruction = (
+            f"\n\n## 老师性别约束（来自品类配置）\n\n"
+            f"该品类的老师为{gender_label}性。在每套生图 Prompt 的老师形象描述中，"
+            f"必须使用 \"A middle-aged Chinese {gender_en} teacher\" 而非其他性别。\n"
+            f"这是一条硬性约束，不得违反。"
+        )
+    system_prompt = system_prompt + gender_instruction
+
     if teacher_outfit_desc:
         outfit_instruction = (
             "\n\n## 老师着装参考（来自 teacher_ref.jpg 的视觉分析）\n\n"
@@ -954,19 +1002,23 @@ def main() -> int:
         )
         system_prompt = system_prompt + outfit_instruction
 
-    # ===== 检测食谱参考图（仅 nutrition 品类）=====
-    recipe_refs: List[str] = []
-    if get_category_name() == "nutrition":
-        recipe_refs = sorted(glob.glob(os.path.join(ANALYSE_DIR, "recipe_ref_*.jpg")))
-        if recipe_refs:
-            print(f"[generate] 检测到 {len(recipe_refs)} 张食谱参考图，将传入生成 API")
-            for rp in recipe_refs:
+    # ===== 通用参考帧检测（由品类配置 reference_frame_types 驱动） =====
+    ref_groups: List[Dict[str, Any]] = []
+    for rft in (category_config.get("reference_frame_types", []) or []):
+        name = rft.get("name", "reference")
+        prefix = rft.get("output_prefix", f"{name}_ref")
+        api_prompt = rft.get("api_prompt", "以下是参考图：")
+        imgs = sorted(glob.glob(os.path.join(ANALYSE_DIR, f"{prefix}_*.jpg")))
+        if imgs:
+            print(f"[generate] 检测到 {len(imgs)} 张 {name} 参考图，将传入生成 API")
+            for rp in imgs:
                 print(f"[generate]   - {rp} ({os.path.getsize(rp) // 1024}KB)")
+            ref_groups.append({"api_prompt": api_prompt, "images": imgs})
         else:
-            print("[generate] 未检测到食谱参考图，跳过食谱内容提取")
+            print(f"[generate] 未检测到 {name} 参考图，跳过")
 
     try:
-        md_text = call_api(api_base, api_key, model, system_prompt, recipe_images=recipe_refs)
+        md_text = call_api(api_base, api_key, model, system_prompt, reference_images=ref_groups)
     except Exception as e:
         print(f"[generate] 调用失败：{e}", file=sys.stderr)
         return 5

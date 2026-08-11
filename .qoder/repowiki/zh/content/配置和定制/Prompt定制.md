@@ -2,8 +2,8 @@
 
 <cite>
 **本文引用的文件**
-- [prompts/analyze_prompt.md](file://prompts/analyze_prompt.md)
-- [prompts/generate_prompt.md](file://prompts/generate_prompt.md)
+- [assets/categories/{category}/analyze_prompt.md](file://assets/categories/{category}/analyze_prompt.md)
+- [assets/categories/{category}/generate_prompt.md](file://assets/categories/{category}/generate_prompt.md)
 - [analyze.py](file://analyze.py)
 - [generate.py](file://generate.py)
 - [generate_image.py](file://generate_image.py)
@@ -44,12 +44,12 @@
 
 ## 项目结构
 该仓库采用"脚本驱动 + 模板化提示词"的分层设计：
-- prompts/analyze_prompt.md：定义多模态分析的系统提示词，指导模型从视频关键帧与口播中抽取结构化信息
-- prompts/generate_prompt.md：定义生成落地页 Hero 方案的系统提示词，指导模型将分析结果转化为可落地的设计方案与主视觉 Prompt
+- assets/categories/{category}/analyze_prompt.md：定义多模态分析的系统提示词，指导模型从视频关键帧与口播中抽取结构化信息
+- assets/categories/{category}/generate_prompt.md：定义生成落地页 Hero 方案的系统提示词，指导模型将分析结果转化为可落地的设计方案与主视觉 Prompt
 - analyze.py：负责读取关键帧与口播文本，调用多模态 API，解析并保存结构化分析结果
 - generate.py：负责读取分析结果，替换生成提示词中的占位符，调用纯文本 API 生成设计方案与 HTML
 - generate_image.py：负责读取生成的变体提示，结合品牌logo参考图像生成最终的Hero页面
-- transcribe.py：使用 Whisper 对前 15 秒音频进行本地转写，生成口播文本
+- transcribe.py：使用 Whisper 对前 30 秒音频进行本地转写，生成口播文本
 - run.sh：统一编排整个流程（截帧、音频提取、转写、分析、生成、生图）
 - config.env：集中管理 API 基础地址、密钥、模型名等配置
 - requirements.txt：运行所需的 Python 依赖
@@ -63,19 +63,19 @@ subgraph "预处理"
 R["run.sh"]
 T["transcribe.py"]
 F["关键帧截图"]
-A["音频(前15秒)"]
+A["音频(前30秒)"]
 end
 subgraph "分析阶段"
 AP["analyze.py"]
-P1["prompts/analyze_prompt.md"]
+P1["assets/categories/{category}/analyze_prompt.md"]
 end
 subgraph "生成阶段"
 GP["generate.py"]
-P2["prompts/generate_prompt.md"]
+P2["assets/categories/{category}/generate_prompt.md"]
 end
 subgraph "生图阶段"
 GI["generate_image.py"]
-BR["assets/brand_logo.png"]
+BR["assets/categories/{category}/brand_logo.png"]
 TR["output/teacher_ref.jpg"]
 end
 subgraph "输出"
@@ -114,7 +114,7 @@ GI --> O4
 
 ## 核心组件
 - 分析提示词模板（analyze_prompt.md）
-  - 角色与任务：明确"资深广告创意分析师"的职责边界，限定输入为"视频前15秒的关键帧与口播"
+  - 角色与任务：明确"资深广告创意分析师"的职责边界，限定输入为"视频前30秒的关键帧与口播"
   - 分析维度：主色调与风格、教师信息、课程名称、痛点、卖点、利益点、辅助说明
   - 输出格式：严格的 JSON 结构，便于程序解析与后续生成阶段复用
 - 生成提示词模板（generate_prompt.md）
@@ -133,13 +133,13 @@ GI --> O4
   - 读取生成的变体提示，结合品牌logo参考图像生成最终的Hero页面
   - 支持多参考图像处理，包括品牌logo和老师参考图
 - 转写脚本（transcribe.py）
-  - 使用 Whisper 对前 15 秒音频进行本地转写，生成可被分析阶段使用的文本
+  - 使用 Whisper 对前 30 秒音频进行本地转写，生成可被分析阶段使用的文本
 - 运行脚本（run.sh）
   - 统一编排：截帧、提取音频、转写、分析、生成、生图，并输出关键产物
 
 **章节来源**
-- [prompts/analyze_prompt.md:1-153](file://prompts/analyze_prompt.md#L1-L153)
-- [prompts/generate_prompt.md:1-130](file://prompts/generate_prompt.md#L1-L130)
+- [assets/categories/{category}/analyze_prompt.md:1-153](file://assets/categories/{category}/analyze_prompt.md#L1-L153)
+- [assets/categories/{category}/generate_prompt.md:1-130](file://assets/categories/{category}/generate_prompt.md#L1-L130)
 - [analyze.py:128-172](file://analyze.py#L128-L172)
 - [generate.py:325-372](file://generate.py#L325-L372)
 - [generate_image.py:240-416](file://generate_image.py#L240-L416)
@@ -157,7 +157,7 @@ participant TR as "transcribe.py"
 participant AN as "analyze.py"
 participant GE as "generate.py"
 participant GI as "generate_image.py"
-participant BR as "assets/brand_logo.png"
+participant BR as "assets/categories/{category}/brand_logo.png"
 participant P1 as "analyze_prompt.md"
 participant P2 as "generate_prompt.md"
 U->>SH : 传入视频文件路径
@@ -189,7 +189,7 @@ GI-->>U : 生成 Hero 页面变体
 
 ### 分析提示词模板（analyze_prompt.md）详解
 - 角色与任务
-  - 明确"资深广告创意分析师"的职责，限定输入范围（前15秒关键帧与口播），避免模型过度发散
+  - 明确"资深广告创意分析师"的职责，限定输入范围（前30秒关键帧与口播），避免模型过度发散
 - 分析维度
   - 主色调与风格：强调主辅色与风格关键词，便于后续生成阶段保持视觉一致性
   - 教师信息：姓名、头衔、形象特征、着装描述；标注信息来源（视觉/音频/两者）
@@ -208,7 +208,7 @@ GI-->>U : 生成 Hero 页面变体
 - 信息来源标注：为后续生成阶段提供可信度与证据定位
 
 **章节来源**
-- [prompts/analyze_prompt.md:1-153](file://prompts/analyze_prompt.md#L1-L153)
+- [assets/categories/{category}/analyze_prompt.md:1-153](file://assets/categories/{category}/analyze_prompt.md#L1-L153)
 
 ### 生成提示词模板（generate_prompt.md）详解
 - 角色与任务
@@ -233,14 +233,14 @@ GI-->>U : 生成 Hero 页面变体
 - **品牌一致性**：严格遵循品牌logo参考图像的使用规范，确保视觉统一性
 
 **章节来源**
-- [prompts/generate_prompt.md:1-130](file://prompts/generate_prompt.md#L1-L130)
+- [assets/categories/{category}/generate_prompt.md:1-130](file://assets/categories/{category}/generate_prompt.md#L1-L130)
 
 ### 分析脚本（analyze.py）流程与提示词交互
 - 数据准备
   - 读取 output/frames 下的 5 张关键帧并编码为 base64
   - 读取 output/transcript.txt 作为口播文本
 - 提示词注入
-  - 读取 prompts/analyze_prompt.md 作为 system prompt
+  - 读取 assets/categories/{category}/analyze_prompt.md 作为 system prompt
 - 多模态调用
   - 构造包含 5 张图片与文本的消息，调用兼容 OpenAI 的多模态 API
   - 设置较低温度以提升稳定性与结构化程度
@@ -270,13 +270,13 @@ SaveRaw --> End
 ### 生成脚本（generate.py）流程与提示词交互
 - 数据准备
   - 读取 output/analysis.json
-  - 读取 prompts/generate_prompt.md 并将占位符 analysis_json 替换为实际 JSON 字符串
+  - 读取 assets/categories/{category}/generate_prompt.md 并将占位符 analysis_json 替换为实际 JSON 字符串
 - 文本调用
   - 调用兼容 OpenAI 的纯文本 API，设置适中温度以平衡创造性与一致性
 - 输出生成
   - 生成 Markdown 文档与 HTML（含内联 CSS，独立可打开）
 - **新增**：生成品牌参考图像
-  - 从 assets/brand_logo.png 复制到每个变体目录的 brand_reference.png
+  - 从 assets/categories/{category}/brand_logo.png 复制到每个变体目录的 brand_reference.png
   - 生成品牌标识参考区域，确保生图时的品牌一致性
 
 ```mermaid
@@ -304,7 +304,7 @@ G->>H : 注入内容并输出 HTML
 
 ### 生成图像脚本（generate_image.py）流程与品牌logo引用系统
 - **新增**：品牌logo引用系统
-  - 读取 assets/brand_logo.png 作为品牌logo参考图像
+  - 读取 assets/categories/{category}/brand_logo.png 作为品牌logo参考图像
   - 构建参考图列表：包含品牌logo和老师参考图
   - 支持多参考图像处理，确保生图时的品牌一致性
 - 数据准备
@@ -422,7 +422,7 @@ REQ --> ENV
 - Whisper 未安装或模型加载失败
   - 转写阶段会提示安装依赖与加载模型失败的原因
 - **新增**：品牌logo引用问题
-  - 检查 assets/brand_logo.png 是否存在
+  - 检查 assets/categories/{category}/brand_logo.png 是否存在
   - 确认生成的品牌参考图像（brand_reference.png）是否正确复制到各变体目录
   - 验证生图时的参考图像路径和文件名
 
@@ -509,7 +509,7 @@ REQ --> ENV
   - 解决：检查 Markdown 渲染依赖；回退到简易渲染器；确认输出目录权限
 - **新增**：品牌logo引用问题
   - 现象：生图时品牌logo显示不正确或缺失
-  - 解决：检查 assets/brand_logo.png 是否存在且格式正确；确认生成的品牌参考图像复制成功；验证生图时的参考图像路径
+  - 解决：检查 assets/categories/{category}/brand_logo.png 是否存在且格式正确；确认生成的品牌参考图像复制成功；验证生图时的参考图像路径
 - **新增**：多参考图像处理失败
   - 现象：生图API调用失败或图片生成异常
   - 解决：检查参考图像文件是否存在且可访问；验证API配置和权限；查看重试日志和错误信息

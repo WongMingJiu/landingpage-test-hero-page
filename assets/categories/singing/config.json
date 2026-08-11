@@ -1,9 +1,13 @@
 {
   "display_name": "唱歌",
+  "default_teacher_name": "",
+  "teacher_gender": "female",
+  "variant_count": 10,
   "description": "中老年唱歌教学课程，强调音乐表达、歌曲演唱、呼吸技巧等。",
   "applicable_inspirations": "A, B, C, D, E, F, G, H, I, J, K",
   "title_pool": ["兴趣岛唱歌训练营首席讲师", "身体唱歌法创始人"],
   "content_list_name": "课程曲目",
   "content_list_description": "具体歌曲名称（如《送别》《鸿雁》等）",
-  "decoration_elements": "音符♪、麦克风图标、舞台光效、金色光晕"
+  "decoration_elements": "音符♪、麦克风图标、舞台光效、金色光晕",
+  "banned_words": ["全国领先", "全国第一", "人民大会堂", "包教包会", "立竿见影", "药到病除", "零风险", "无副作用", "限时秒杀", "不买后悔", "错过再无", "缓解疼痛", "驰名商标"]
 }

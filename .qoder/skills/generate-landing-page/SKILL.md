@@ -8,7 +8,7 @@ description: 落地页 Hero 区域设计方案生成工具。支持两种模式�
 > 落地页 Hero 区域设计方案的端到端自动化技能。
 >
 > 两种输入模式：
-> 1. **视频输入** → 截帧 → 转写 → 多模态分析 → 5 套生图 Prompt → （可选）调用生图 API 生成图片
+> 1. **视频输入** → 截帧 → 转写 → 多模态分析 → 多套生图 Prompt → （可选）调用生图 API 生成图片
 > 2. **Prompt + 参考图输入** → 直接调用生图 API 生成落地页图片
 
 ## 触发条件
@@ -16,7 +16,7 @@ description: 落地页 Hero 区域设计方案生成工具。支持两种模式�
 当用户请求中出现以下任一意图时，启用本技能：
 
 - 需要从广告/宣传视频生成落地页 Hero 区域的设计方案
-- 需要为视频内容产出 5 套不同风格的 AI 生图 Prompt 变体
+- 需要为视频内容产出多套不同风格的 AI 生图 Prompt 变体
 - 需要根据已有的 prompt 和参考图生成落地页图片
 - 需要把视频分析结果落地为可视化 HTML 或最终图片
 
@@ -68,30 +68,30 @@ cd <PROJECT_DIR>
 output/<视频名称>/
 ├── analyse_result/        # analysis.json + landing_page_design.md/.html
 ├── video_clip_result/     # 视频帧 + 音频 + 转写
-└── design_refer/          # 5 套生图 Prompt 变体素材
+└── design_refer/          # 多套生图 Prompt 变体素材
     ├── page1/             # prompt.md + teacher_ref.jpg + teacher_face_ref_1.jpg + teacher_face_ref_2.jpg + brand_reference.png
-    ├── page2/ ... page5/
+    ├── page2/ ... pageN/
 ```
 
-> - 生成的 prompt.md 中**品牌栏描述会自动引用项目固定的 `assets/brand_logo.png`**，不再依赖 AI 文字渲染品牌名，确保品牌一致性。
-> - 分析阶段会自动引用全局保底痛点/卖点/利益点（`assets/fallback_points.md`），作为 LLM 分析时的参考素材，LLM 可选采纳，保证即使视频信息量不足也能产出高质量文案。
+> - 生成的 prompt.md 中**品牌栏描述会自动引用当前品类的 `assets/categories/{category}/brand_logo.png`**，不再依赖 AI 文字渲染品牌名，确保品牌一致性。
+> - 分析与生成阶段的 Prompt、老师参考图、品牌素材均来自 `assets/categories/{category}/`，不同品类互不回退。
 > - 生成阶段会自动视觉预处理 `teacher_ref.jpg`，提取老师着装描述注入 prompt，确保生图中老师着装与参考图一致。
-> - **配色多样性约束**：5 套变体必须覆盖至少 2-3 种不同色系，根据视频场景动态选择配色，禁止深色背景（黑色/深蓝/深绿/深灰）以适配中老年用户。
+> - **配色多样性约束**：多套变体必须覆盖至少 2-3 种不同色系，根据视频场景动态选择配色，禁止深色背景（黑色/深蓝/深绿/深灰）以适配中老年用户。
 
-同时自动同步到：`~/workspace/landing-page-manage/唱歌项目/<视频名称>/`
+同时自动同步到：`~/workspace/landing-page-manage/{CATEGORY_FOLDER_NAME}/<视频名称>/`
 
 ### A3. 展示结果
 
 1. 打开 HTML：`open output/<视频名称>/analyse_result/landing_page_design.html`
 2. 告知用户结果路径和同步目标路径
-3. 列出 5 套变体（page1 ~ page5）
+3. 列出多套变体（page1 ~ pageN）
 
 ### A4. 询问是否继续生图
 
 **必须等 A2/A3 完成后再询问**，不要自动执行生图：
 
-> 5 套设计方案 Prompt 已生成完毕。是否现在调用生图 API 生成落地页图片？
-> - 全部生成（page1~page5）
+> 多套设计方案 Prompt 已生成完毕。是否现在调用生图 API 生成落地页图片？
+> - 全部生成（page1~pageN）
 > - 指定生成（请告诉我要生哪几个 page）
 > - 暂不生图（稍后手动执行）
 
@@ -104,7 +104,7 @@ output/<视频名称>/
 ### B1. 确认参数
 
 需要两个信息：
-1. **视频名称**：用于定位 `~/workspace/landing-page-manage/唱歌项目/{视频名}/pageN/` 下的素材
+1. **视频名称**：用于定位 `~/workspace/landing-page-manage/{CATEGORY_FOLDER_NAME}/{视频名}/pageN/` 下的素材
 2. **要生成的 page 范围**：全部（默认）或指定编号
 
 ### B2. 执行生图脚本
@@ -126,10 +126,10 @@ no_proxy='*' NO_PROXY='*' python3 generate_image.py "<视频名称>" --pages 1 3
 
 | 参考图 | 来源 | 作用 |
 | --- | --- | --- |
-| `teacher_ref.jpg` | `~/workspace/landing-page-manage/唱歌项目/<视频名>/pageN/teacher_ref.jpg` | 老师整体形象一致性 |
-| `teacher_face_ref_1.jpg` | `~/workspace/landing-page-manage/唱歌项目/<视频名>/pageN/teacher_face_ref_1.jpg` | 老师脸部三视图参考 1 |
-| `teacher_face_ref_2.jpg` | `~/workspace/landing-page-manage/唱歌项目/<视频名>/pageN/teacher_face_ref_2.jpg` | 老师脸部三视图参考 2 |
-| `assets/brand_logo.png` | 项目根目录固定素材 | 品牌栏 logo 一致性 |
+| `teacher_ref.jpg` | `~/workspace/landing-page-manage/{CATEGORY_FOLDER_NAME}/<视频名>/pageN/teacher_ref.jpg` | 老师整体形象一致性 |
+| `teacher_face_ref_1.jpg` | `~/workspace/landing-page-manage/{CATEGORY_FOLDER_NAME}/<视频名>/pageN/teacher_face_ref_1.jpg` | 老师脸部三视图参考 1 |
+| `teacher_face_ref_2.jpg` | `~/workspace/landing-page-manage/{CATEGORY_FOLDER_NAME}/<视频名>/pageN/teacher_face_ref_2.jpg` | 老师脸部三视图参考 2 |
+| `assets/categories/{category}/brand_logo.png` | 当前品类固定素材 | 品牌栏 logo 一致性 |
 
 品牌栏不依赖 AI 文字渲染品牌名，而是直接引用固定 logo 参考图，确保跨页视觉统一。老师脸部三视图参考图用于增强面部特征一致性。
 
@@ -138,17 +138,16 @@ no_proxy='*' NO_PROXY='*' python3 generate_image.py "<视频名称>" --pages 1 3
 输出为**平铺结构**（不再有 pageN 子目录）：
 
 ```
-~/workspace/landing-page-manage/唱歌项目/landing-page/<视频名称>/
+~/workspace/landing-page-manage/{CATEGORY_FOLDER_NAME}/landing-page/<视频名称>/
 ├── page1.png
 ├── page2.png
-├── page3.png
-├── page4.png
-└── page5.png
+├── ...
+└── pageN.png
 ```
 
 告知用户每个生成成功的图片位置，并打开查看（如果在 macOS）：
 ```bash
-open ~/workspace/landing-page-manage/唱歌项目/landing-page/<视频名称>/page1.png
+open ~/workspace/landing-page-manage/{CATEGORY_FOLDER_NAME}/landing-page/<视频名称>/page1.png
 ```
 
 ---
@@ -186,10 +185,10 @@ python3 generate.py
 
 ### 路径 A 完成后：
 - [ ] `landing_page_design.html` 已生成并可打开
-- [ ] `design_refer/page1~page5` 各含 `prompt.md` + 参考图（teacher_ref + face_ref×2 + brand_reference）
-- [ ] 已同步到 `~/workspace/landing-page-manage/唱歌项目/<视频名称>/`
+- [ ] `design_refer/page1~pageN` 各含 `prompt.md` + 参考图（teacher_ref + face_ref×2 + brand_reference）
+- [ ] 已同步到 `~/workspace/landing-page-manage/{CATEGORY_FOLDER_NAME}/<视频名称>/`
 - [ ] 已询问用户是否继续生图
 
 ### 路径 B 完成后：
-- [ ] `~/workspace/landing-page-manage/唱歌项目/landing-page/<视频名称>/pageN.png` 已生成（平铺结构）
+- [ ] `~/workspace/landing-page-manage/{CATEGORY_FOLDER_NAME}/landing-page/<视频名称>/pageN.png` 已生成（平铺结构）
 - [ ] 已告知用户图片保存位置
