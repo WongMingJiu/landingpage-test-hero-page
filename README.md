@@ -2,6 +2,17 @@
 
 > 一键将「广告视频前 30 秒」转换为「落地页 Hero 区域」的多套 AI 生图设计方案。
 
+## Current Direction
+
+当前项目正在从“多套 Hero 设计生成器”演进为 **Creative Intent → Landing Page Message Match** 实验引擎。
+
+现阶段优先验证：**广告素材的核心点击动机被 Hero 继续承接，是否能够带来真实转化增量。** 在该假设得到验证前，不以增加 Hero 风格数量、整页 AI 自由生成或用户级千人千面作为第一优先级。
+
+- 长期路线：[`ROADMAP.md`](ROADMAP.md)
+- 当前实验计划：[`docs/experiment-plan-v2.md`](docs/experiment-plan-v2.md)
+
+现有多套 Hero 生图能力继续保留，主要作为设计探索与后续 Visual Match 阶段的能力基础。
+
 ## 项目简介
 
 本工具是一套面向**营销设计团队**的 AI 自动化流水线，专门服务于**中老年课程**类广告视频的落地页 Hero 区域设计，支持多品类（唱歌、健康营养等）。
