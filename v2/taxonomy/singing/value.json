@@ -1,0 +1,336 @@
+{
+  "taxonomy_id": "singing-value-v1.0",
+  "source_doc": "docs/taxonomy/singing-value-taxonomy-v1.0.md",
+  "categories": [
+    {
+      "category": "演唱能力",
+      "active_limit": 3,
+      "labels": [
+        {
+          "label": "稳定气息",
+          "description": "帮助用户改善气息不足、断气或气息不稳，使气息更通畅稳定。",
+          "examples": [
+            "气息更稳、上气不接下气得到改善"
+          ],
+          "mvp_enabled": true
+        },
+        {
+          "label": "改善音色与声音质感",
+          "description": "帮助用户改善大白嗓、声音单薄等问题，使歌声更圆润、通透、悦耳或具有混响。",
+          "examples": [
+            "摆脱大白嗓、歌声自带混响"
+          ],
+          "mvp_enabled": true
+        },
+        {
+          "label": "增强声音稳定与力量",
+          "description": "帮助用户减少声音虚、抖、飘，增强声音稳定性、穿透力和力量感。",
+          "examples": [
+            "声音不再发虚发抖、歌声更有力量"
+          ],
+          "mvp_enabled": true
+        },
+        {
+          "label": "正确发声并保护嗓音",
+          "description": "帮助用户找到正确发声位置，减少喉咙用力、声音卡住或伤嗓风险。",
+          "examples": [
+            "找对发声部位、不伤嗓子、声音不卡在喉咙"
+          ],
+          "mvp_enabled": true
+        },
+        {
+          "label": "突破高音",
+          "description": "帮助用户更轻松、稳定地完成高音。",
+          "examples": [
+            "高音轻松、以前不敢唱的高音也唱上去"
+          ],
+          "mvp_enabled": true
+        },
+        {
+          "label": "突破低音",
+          "description": "帮助用户完成低音或改善低音下不来的问题。",
+          "examples": [
+            "低音下得来"
+          ],
+          "mvp_enabled": true
+        },
+        {
+          "label": "顺畅音域转换",
+          "description": "帮助用户在高中低音之间顺畅切换。",
+          "examples": [
+            "高中低音自如切换"
+          ],
+          "mvp_enabled": true
+        },
+        {
+          "label": "改善音准并减少跑调破音",
+          "description": "帮助用户唱得更准，减少跑调、破音或音准不稳。",
+          "examples": [
+            "唱歌不再跑调、声音更准"
+          ],
+          "mvp_enabled": true
+        },
+        {
+          "label": "增强情感表达",
+          "description": "帮助用户唱出更有感情、更有意境和感染力的歌声。",
+          "examples": [
+            "歌声更有感情、唱出有情感的歌声"
+          ],
+          "mvp_enabled": true
+        },
+        {
+          "label": "掌握通用演唱能力",
+          "description": "帮助用户获得可迁移到多首歌曲的通用演唱能力。",
+          "examples": [
+            "不管唱什么歌都好听、唱好所有通俗歌曲"
+          ],
+          "mvp_enabled": true
+        }
+      ]
+    },
+    {
+      "category": "心理障碍突破",
+      "active_limit": 2,
+      "labels": [
+        {
+          "label": "敢于开口演唱",
+          "description": "帮助用户克服不敢唱、害怕开口或在人前演唱的心理障碍。",
+          "examples": [
+            "从不敢唱到大胆开口"
+          ],
+          "mvp_enabled": true
+        },
+        {
+          "label": "建立演唱自信",
+          "description": "帮助用户减少自我怀疑，增强对自己歌声和学习能力的信心。",
+          "examples": [
+            "越唱越自信、自信开口唱"
+          ],
+          "mvp_enabled": true
+        },
+        {
+          "label": "降低天赋与嗓音条件焦虑",
+          "description": "帮助用户克服认为自己没有天赋或先天嗓音条件差的担忧。",
+          "examples": [
+            "不需要天赋、没有优越嗓音也能学"
+          ],
+          "mvp_enabled": true
+        },
+        {
+          "label": "降低年龄焦虑",
+          "description": "帮助用户降低因年龄较大而担心学不会、练不好的焦虑。",
+          "examples": [
+            "年纪大也能学、中老年友好"
+          ],
+          "mvp_enabled": true
+        }
+      ]
+    },
+    {
+      "category": "学习降阻",
+      "active_limit": 2,
+      "labels": [
+        {
+          "label": "零基础可学",
+          "description": "降低基础要求，让没有唱歌基础的用户也能开始学习。",
+          "examples": [
+            "零基础小白也可以轻松学"
+          ],
+          "mvp_enabled": true
+        },
+        {
+          "label": "方法简单易操作",
+          "description": "降低动作和练习难度，让用户容易理解、模仿和执行。",
+          "examples": [
+            "几个简单动作、看得见摸得着的训练"
+          ],
+          "mvp_enabled": true
+        },
+        {
+          "label": "降低乐理与理解门槛",
+          "description": "减少复杂乐理、专业术语或抽象理解造成的学习障碍。",
+          "examples": [
+            "不讲复杂乐理、没有理解门槛"
+          ],
+          "mvp_enabled": true
+        },
+        {
+          "label": "降低时间与地点限制",
+          "description": "支持用户利用碎片时间，在家或通过手机灵活学习。",
+          "examples": [
+            "一部手机在家学、有空就看、每天十五分钟"
+          ],
+          "mvp_enabled": true
+        },
+        {
+          "label": "支持反复学习",
+          "description": "通过课程回放或反复观看，降低跟不上和遗忘风险。",
+          "examples": [
+            "课程支持反复回看、无限回放"
+          ],
+          "mvp_enabled": true
+        },
+        {
+          "label": "获得辅导与答疑",
+          "description": "通过助教、辅导或答疑帮助用户解决练习中的具体问题。",
+          "examples": [
+            "助教针对性辅导、辅导老师指导答疑"
+          ],
+          "mvp_enabled": true
+        },
+        {
+          "label": "获得系统学习路径",
+          "description": "通过课程结构、分课安排或循序渐进的路径降低学习迷茫。",
+          "examples": [
+            "第一课到第五课分别解决不同问题"
+          ],
+          "mvp_enabled": true
+        }
+      ]
+    },
+    {
+      "category": "专业认知提升",
+      "active_limit": 2,
+      "labels": [
+        {
+          "label": "识别自身唱歌问题",
+          "description": "帮助用户识别自己存在的具体唱歌问题或问题组合。",
+          "examples": [
+            "上气不接下气、大白嗓、高音困难等问题清单"
+          ],
+          "mvp_enabled": true
+        },
+        {
+          "label": "纠正错误唱歌认知",
+          "description": "帮助用户修正关于嗓子、天赋或传统练习方式的错误认知。",
+          "examples": [
+            "唱歌靠的不是嗓子，而是身体"
+          ],
+          "mvp_enabled": true
+        },
+        {
+          "label": "理解发声原理",
+          "description": "帮助用户理解气息、腔体、身体通道、肌肉或发声位置等原理。",
+          "examples": [
+            "打开身体通道、激活肌肉、找到发声位置"
+          ],
+          "mvp_enabled": true
+        },
+        {
+          "label": "明确问题解决路径",
+          "description": "帮助用户知道不同问题应该学习什么内容、采取什么步骤。",
+          "examples": [
+            "想解决气息看第一节课，想学高音看第三节课"
+          ],
+          "mvp_enabled": true
+        },
+        {
+          "label": "获得演唱效果参照",
+          "description": "通过演唱或练习结果，为用户提供什么是好效果的直观参照。",
+          "examples": [
+            "实际演唱片段、老师评价“非常好”"
+          ],
+          "mvp_enabled": true
+        },
+        {
+          "label": "获得可复制学习范例",
+          "description": "通过学员故事、跟练或成果案例，让用户看到可参考的学习路径。",
+          "examples": [
+            "学员跟练后立竿见影"
+          ],
+          "mvp_enabled": true
+        }
+      ]
+    },
+    {
+      "category": "社交价值",
+      "active_limit": 1,
+      "labels": [
+        {
+          "label": "获得他人认可",
+          "description": "帮助用户期待通过歌声获得惊艳、羡慕、称赞或认可。",
+          "examples": [
+            "惊艳所有人、别人羡慕好歌喉"
+          ],
+          "mvp_enabled": true
+        },
+        {
+          "label": "提升社交参与与自我表达",
+          "description": "帮助用户更愿意在聚会、社区或生活场景中开口唱歌和表现自我。",
+          "examples": [
+            "在家唱、聚会唱、小区唱，大胆表现自己"
+          ],
+          "mvp_enabled": true
+        }
+      ]
+    },
+    {
+      "category": "信任保障",
+      "active_limit": 1,
+      "labels": [
+        {
+          "label": "获得专业指导",
+          "description": "让用户获得来自专业身份、长期经验或权威机构的可靠指导。",
+          "examples": [
+            "国家一级演员、三十多年教学经验"
+          ],
+          "mvp_enabled": true
+        },
+        {
+          "label": "获得效果与服务保障",
+          "description": "通过效果承诺、课程安排、回放或服务支持降低学习结果的不确定性。",
+          "examples": [
+            "不怕学不会、助教辅导、课程可回看"
+          ],
+          "mvp_enabled": true
+        },
+        {
+          "label": "减少试错与选择成本",
+          "description": "帮助用户减少在不同方法、老师或课程之间反复试错和选择的成本。",
+          "examples": [
+            "总结三十多年经验、正版方法、无需网上到处找教程"
+          ],
+          "mvp_enabled": true
+        }
+      ]
+    },
+    {
+      "category": "课程权益",
+      "active_limit": 2,
+      "labels": [
+        {
+          "label": "获得课程与学习资源",
+          "description": "让用户获得课程、课程视频、练习资料或配套学习资源。",
+          "examples": [
+            "领取四天身体唱歌课程到手机"
+          ],
+          "mvp_enabled": true
+        },
+        {
+          "label": "便捷领取并快速开始",
+          "description": "降低下载、填写资料、领取和开始学习的操作成本。",
+          "examples": [
+            "不用下载、不填资料、点击就能领取"
+          ],
+          "mvp_enabled": true
+        },
+        {
+          "label": "把握限时稀缺机会",
+          "description": "提醒用户及时把握即将结束、可能失去或数量有限的课程机会。",
+          "examples": [
+            "课程马上停止、再不领取就送给其他人"
+          ],
+          "mvp_enabled": true
+        },
+        {
+          "label": "明确学习入口",
+          "description": "告诉用户在哪里以及如何进入学习、领取或报名流程。",
+          "examples": [
+            "点击下方链接、学唱歌就上兴趣岛"
+          ],
+          "mvp_enabled": true
+        }
+      ]
+    }
+  ]
+}

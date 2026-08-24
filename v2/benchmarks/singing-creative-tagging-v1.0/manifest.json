@@ -1,0 +1,261 @@
+{
+  "benchmark_id": "singing-creative-tagging-v1.0",
+  "schema_version": "creative_tagging_v1",
+  "ground_truth_doc": "docs/benchmarks/singing-creative-tagging-benchmark-v1.0.md",
+  "videos_dir_local": "benchmarks-local/singing-creative-tagging-v1.0/videos",
+  "expected_decision_window": {
+    "used_seconds": 30,
+    "extended": false
+  },
+  "acceptance": {
+    "json_parseable": "10/10",
+    "labels_in_taxonomy": "100%",
+    "opening_type": ">=9/10 (v02/v10 use acceptable_alternatives + human evidence review, not string match)",
+    "user_expectation": ">=9/10",
+    "decision_window_no_false_extend": "10/10",
+    "primary_active_core_semantics": ">=8/10 (primary tags match GT; supporting may differ due to §6.4 caps)",
+    "evidence_present": "100%",
+    "stability": "3 runs: opening/expectation stable, active core stable"
+  },
+  "gt_adjustments": [
+    {
+      "id": "v08",
+      "type": "active_category_cap",
+      "original_active_supporting": ["纠正错误唱歌认知", "理解发声原理", "获得演唱效果参照"],
+      "corrected_active_supporting": ["纠正错误唱歌认知", "获得演唱效果参照"],
+      "reason": "Spec §6.4 limits 专业认知提升 Active tags to 2. The original GT had 3; retain the directly evidenced认知纠偏 and演唱效果参照, remove the less central supporting原理 tag.",
+      "source_note": "Canonical benchmark markdown remains unchanged; this machine-readable manifest applies the approved Spec constraint."
+    },
+    {
+      "id": "v09",
+      "type": "active_category_cap",
+      "original_active_supporting": ["零基础可学", "降低乐理与理解门槛", "获得专业指导"],
+      "corrected_active_supporting": ["零基础可学", "获得专业指导"],
+      "reason": "Spec §6.4 limits 学习降阻 Active tags to 2. The 0–10s central proposition is age accessibility plus simple method; remove the later, less central乐理 barrier supporting tag.",
+      "source_note": "Canonical benchmark markdown remains unchanged; this machine-readable manifest applies the approved Spec constraint."
+    }
+  ],
+  "known_gt_notes": [
+    "Manifest corrected v08/v09 category cap violations according to approved Spec §6.4; canonical benchmark markdown is retained as historical Ground Truth source."
+  ],
+  "items": [
+    {
+      "id": "v01",
+      "video": "v01.mp4",
+      "expected": {
+        "used_seconds": 30,
+        "extended": false,
+        "opening_type": "学员故事证明型",
+        "opening_acceptable_alternatives": [],
+        "user_expectation": "复制学员成功路径",
+        "confidence": "high",
+        "active_primary": [
+          "获得可复制学习范例",
+          "获得演唱效果参照"
+        ],
+        "active_supporting": [
+          "正确发声并保护嗓音",
+          "获得专业指导",
+          "获得课程与学习资源"
+        ],
+        "boundary_note": null
+      }
+    },
+    {
+      "id": "v02",
+      "video": "v02.mp4",
+      "expected": {
+        "used_seconds": 30,
+        "extended": false,
+        "opening_type": "教学演示型",
+        "opening_acceptable_alternatives": [
+          "演唱效果型"
+        ],
+        "user_expectation": "掌握简单方法",
+        "confidence": "medium",
+        "active_primary": [
+          "获得专业指导",
+          "获得演唱效果参照"
+        ],
+        "active_supporting": [
+          "方法简单易操作",
+          "降低时间与地点限制"
+        ],
+        "boundary_note": "歌曲带练归教学演示，决策优先级高于演唱效果"
+      }
+    },
+    {
+      "id": "v03",
+      "video": "v03.mp4",
+      "expected": {
+        "used_seconds": 30,
+        "extended": false,
+        "opening_type": "演唱效果型",
+        "opening_acceptable_alternatives": [],
+        "user_expectation": "复制学员成功路径",
+        "confidence": "high",
+        "active_primary": [
+          "获得演唱效果参照",
+          "获得可复制学习范例"
+        ],
+        "active_supporting": [
+          "获得他人认可",
+          "获得系统学习路径",
+          "获得专业指导"
+        ],
+        "boundary_note": null
+      }
+    },
+    {
+      "id": "v04",
+      "video": "v04.mp4",
+      "expected": {
+        "used_seconds": 30,
+        "extended": false,
+        "opening_type": "学员故事证明型",
+        "opening_acceptable_alternatives": [],
+        "user_expectation": "复制学员成功路径",
+        "confidence": "high",
+        "active_primary": [
+          "获得可复制学习范例",
+          "获得演唱效果参照"
+        ],
+        "active_supporting": [
+          "把握限时稀缺机会",
+          "获得课程与学习资源"
+        ],
+        "boundary_note": null
+      }
+    },
+    {
+      "id": "v05",
+      "video": "v05.mp4",
+      "expected": {
+        "used_seconds": 30,
+        "extended": false,
+        "opening_type": "演唱效果型",
+        "opening_acceptable_alternatives": [],
+        "user_expectation": "理解专业原理",
+        "confidence": "high",
+        "active_primary": [
+          "正确发声并保护嗓音",
+          "理解发声原理"
+        ],
+        "active_supporting": [
+          "方法简单易操作",
+          "获得演唱效果参照",
+          "获得专业指导"
+        ],
+        "boundary_note": null
+      }
+    },
+    {
+      "id": "v06",
+      "video": "v06.mp4",
+      "expected": {
+        "used_seconds": 30,
+        "extended": false,
+        "opening_type": "教学演示型",
+        "opening_acceptable_alternatives": [],
+        "user_expectation": "掌握简单方法",
+        "confidence": "high",
+        "active_primary": [
+          "正确发声并保护嗓音",
+          "纠正错误唱歌认知"
+        ],
+        "active_supporting": [
+          "理解发声原理",
+          "获得课程与学习资源"
+        ],
+        "boundary_note": null
+      }
+    },
+    {
+      "id": "v07",
+      "video": "v07.mp4",
+      "expected": {
+        "used_seconds": 30,
+        "extended": false,
+        "opening_type": "演唱效果型",
+        "opening_acceptable_alternatives": [],
+        "user_expectation": "复制学员成功路径",
+        "confidence": "high",
+        "active_primary": [
+          "获得演唱效果参照",
+          "获得他人认可"
+        ],
+        "active_supporting": [
+          "获得可复制学习范例",
+          "方法简单易操作"
+        ],
+        "boundary_note": null
+      }
+    },
+    {
+      "id": "v08",
+      "video": "v08.mp4",
+      "expected": {
+        "used_seconds": 30,
+        "extended": false,
+        "opening_type": "教学演示型",
+        "opening_acceptable_alternatives": [],
+        "user_expectation": "掌握简单方法",
+        "confidence": "high",
+        "active_primary": [
+          "方法简单易操作",
+          "正确发声并保护嗓音"
+        ],
+        "active_supporting": [
+          "纠正错误唱歌认知",
+          "获得演唱效果参照"
+        ],
+        "boundary_note": null
+      }
+    },
+    {
+      "id": "v09",
+      "video": "v09.mp4",
+      "expected": {
+        "used_seconds": 30,
+        "extended": false,
+        "opening_type": "低门槛领取型",
+        "opening_acceptable_alternatives": [],
+        "user_expectation": "低门槛开始学习",
+        "confidence": "high",
+        "active_primary": [
+          "降低年龄焦虑",
+          "方法简单易操作"
+        ],
+        "active_supporting": [
+          "零基础可学",
+          "获得专业指导"
+        ],
+        "boundary_note": null
+      }
+    },
+    {
+      "id": "v10",
+      "video": "v10.mp4",
+      "expected": {
+        "used_seconds": 30,
+        "extended": false,
+        "opening_type": "教学演示型",
+        "opening_acceptable_alternatives": [
+          "演唱效果型"
+        ],
+        "user_expectation": "掌握简单方法",
+        "confidence": "medium",
+        "active_primary": [
+          "方法简单易操作",
+          "正确发声并保护嗓音"
+        ],
+        "active_supporting": [
+          "获得演唱效果参照",
+          "零基础可学",
+          "降低年龄焦虑"
+        ],
+        "boundary_note": "师生同唱+方法字幕，教学演示优先于演唱效果"
+      }
+    }
+  ]
+}

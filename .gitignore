@@ -5,3 +5,4 @@ __pycache__/
 *.zip
 .DS_Store
 config.env
+benchmarks-local/
