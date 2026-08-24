@@ -432,6 +432,75 @@ def _merge_user_content(observations: list[dict], transcript_segs: list[dict],
 
 
 # --------------------------------------------------------------------------- #
+# Replayable structured-evidence artifact (infrastructure; decision logic and
+# creative_tagging_v1 schema unchanged)
+# --------------------------------------------------------------------------- #
+STRUCTURED_EVIDENCE_SCHEMA = "structured_evidence_v1"
+STRUCTURED_EVIDENCE_FILENAME = "structured_evidence.json"
+
+
+def save_structured_evidence(path: str, observations: list[dict],
+                             transcript_segs: list[dict],
+                             contact_sheet: dict | None,
+                             creative_id: str | None = None) -> dict:
+    """Persist the normalized evidence produced BEFORE final adjudication so
+    adjudication can be replayed without video/multimodal re-extraction."""
+    artifact = {
+        "schema": STRUCTURED_EVIDENCE_SCHEMA,
+        "creative_id": creative_id,
+        "window": {"primary_seconds": 30, "used_seconds": 30},
+        "observations": observations,
+        "transcript": transcript_segs or [],
+        "contact_sheet": contact_sheet,
+    }
+    d = os.path.dirname(os.path.abspath(path))
+    if d:
+        os.makedirs(d, exist_ok=True)
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(artifact, f, ensure_ascii=False)
+    return artifact
+
+
+def load_structured_evidence(path: str) -> dict:
+    with open(path, "r", encoding="utf-8") as f:
+        artifact = json.load(f)
+    if not isinstance(artifact, dict) or artifact.get("schema") != STRUCTURED_EVIDENCE_SCHEMA:
+        raise ValueError(f"unsupported evidence artifact schema: "
+                         f"{artifact.get('schema') if isinstance(artifact, dict) else type(artifact)!r}")
+    if not isinstance(artifact.get("observations"), list) or not artifact["observations"]:
+        raise ValueError("evidence artifact contains no observations")
+    return artifact
+
+
+def _adjudicate(api: "ApiClient", system: str, tax: taxonomy.TaxonomyData,
+                observations: list[dict], transcript_segs: list[dict],
+                contact_sheet: dict | None, audio_enabled: bool,
+                max_retries: int) -> dict:
+    """Shared constrained final adjudication (used by the staged path and by
+    replay); only schema-validation retries, identical semantics."""
+    last_errs: list[str] = []
+    for attempt in range(1, max_retries + 1):
+        user = _merge_user_content(observations, transcript_segs, contact_sheet,
+                                   last_errs or None)
+        raw = api.chat(system, user)
+        try:
+            data = extract_json(raw)
+        except Exception as e:
+            last_errs = [f"JSON 解析失败: {e}"]
+            print(f"[tagging] staged merge parse failed (attempt {attempt}): {e}", flush=True)
+            continue
+        errs = schema.validate(data, tax, audio_enabled=audio_enabled)
+        if not errs:
+            return data
+        last_errs = errs
+        print(f"[tagging] staged merge validation failed (attempt {attempt}): {errs}", flush=True)
+    raise RuntimeError(
+        f"staged merge failed validation after {max_retries} attempts; "
+        f"last errs: {last_errs}"
+    )
+
+
+# --------------------------------------------------------------------------- #
 # Pipeline
 # --------------------------------------------------------------------------- #
 class TaggingConfig:
@@ -513,14 +582,15 @@ class TaggingPipeline:
         self.tax = tax or taxonomy.load_taxonomy("singing")
         self.system = build_system_prompt(self.tax)
         self.ext_system = _load_prompt("extension.md")
-        self.api = ApiClient(cfg.api_base, cfg.api_key, cfg.model,
-                             temperature=cfg.temperature, max_retries=cfg.api_retries)
+        from . import provider  # thin adapter: provider swappable via env/config
+        self.api = provider.make_provider(cfg)
 
     # ------------------------------------------------------------------ #
-    def _primary_call(self, fr_all: list[dict], transcript_segs: list[dict]) -> dict:
+    def _primary_call(self, fr_all: list[dict], transcript_segs: list[dict],
+                      evidence_path: str | None = None) -> dict:
         if os.environ.get("V2_FORCE_STAGED", "").strip() in ("1", "true", "yes"):
             print("[tagging] V2_FORCE_STAGED=1 -> staged multi-request (correction #1)", flush=True)
-            return self._staged_primary(fr_all, transcript_segs)
+            return self._staged_primary(fr_all, transcript_segs, evidence_path)
         user = _vision_user_content(fr_all, transcript_segs, "0-30s")
         try:
             return _call_with_validation(self.api, self.system, user, self.tax,
@@ -528,7 +598,7 @@ class TaggingPipeline:
         except Exception as e:
             if _is_payload_too_large(e):
                 print("[tagging] single request too large/timed out; switching to staged multi-request (correction #1)", flush=True)
-                return self._staged_primary(fr_all, transcript_segs)
+                return self._staged_primary(fr_all, transcript_segs, evidence_path)
             raise
 
     # ------------------------------------------------------------------ #
@@ -548,14 +618,15 @@ class TaggingPipeline:
               flush=True)
 
         # stage 1
+        evidence_path = os.path.join(work_dir, STRUCTURED_EVIDENCE_FILENAME)
         if needs_staged and not fr_all:
             # budget too small to hold opening -> force staged
             fr_all = load_frames(frames_mod.opening_frame_seconds(n_frames) +
                                  frames_mod.tail_frame_seconds(n_frames),
                                  media.frames_dir, self.cfg.compress_kb)
-            data = self._staged_primary(fr_all, prim["segments"])
+            data = self._staged_primary(fr_all, prim["segments"], evidence_path)
         else:
-            data = self._primary_call(fr_all, prim["segments"])
+            data = self._primary_call(fr_all, prim["segments"], evidence_path)
 
         # ensure creative_id set
         data["creative_id"] = creative_id
@@ -581,32 +652,36 @@ class TaggingPipeline:
         print(f"[tagging] wrote {out_path}", flush=True)
         return data
 
-    def _staged_primary(self, fr_all: list[dict], transcript_segs: list[dict]) -> dict:
+    def _staged_primary(self, fr_all: list[dict], transcript_segs: list[dict],
+                        evidence_path: str | None = None) -> dict:
         # Structured evidence extraction once in small reliable batches, then
         # ONE constrained adjudication over the normalized evidence inventory
         # + all-frame contact sheet; only the adjudication is retried on
         # schema errors (e.g. §6.4 cap overflow).
         observations = _collect_staged_evidence(self.api, fr_all, transcript_segs)
         contact_sheet = _build_contact_sheet(fr_all)
-        last_errs: list[str] = []
-        for attempt in range(1, self.cfg.max_retries + 1):
-            user = _merge_user_content(observations, transcript_segs, contact_sheet, last_errs or None)
-            raw = self.api.chat(self.system, user)
-            try:
-                data = extract_json(raw)
-            except Exception as e:
-                last_errs = [f"JSON 解析失败: {e}"]
-                print(f"[tagging] staged merge parse failed (attempt {attempt}): {e}", flush=True)
-                continue
-            errs = schema.validate(data, self.tax, audio_enabled=self.cfg.audio_enabled)
-            if not errs:
-                return data
-            last_errs = errs
-            print(f"[tagging] staged merge validation failed (attempt {attempt}): {errs}", flush=True)
-        raise RuntimeError(
-            f"staged merge failed validation after {self.cfg.max_retries} attempts; "
-            f"last errs: {last_errs}"
-        )
+        if evidence_path:
+            save_structured_evidence(evidence_path, observations, transcript_segs,
+                                     contact_sheet)
+            print(f"[tagging] structured evidence artifact: {evidence_path}", flush=True)
+        return _adjudicate(self.api, self.system, self.tax, observations,
+                           transcript_segs, contact_sheet, self.cfg.audio_enabled,
+                           self.cfg.max_retries)
+
+    # ------------------------------------------------------------------ #
+    def replay(self, evidence: dict, creative_id: str) -> dict:
+        """Adjudication-only replay: consume a structured-evidence artifact
+        (observations + timestamped transcript + contact sheet) and run the
+        SAME constrained final adjudication — no video extraction, no
+        multimodal evidence extraction. Output schema unchanged."""
+        observations = evidence["observations"]
+        transcript_segs = evidence.get("transcript") or []
+        contact_sheet = evidence.get("contact_sheet")
+        data = _adjudicate(self.api, self.system, self.tax, observations,
+                           transcript_segs, contact_sheet, self.cfg.audio_enabled,
+                           self.cfg.max_retries)
+        data["creative_id"] = creative_id
+        return data
 
     def _extension_call(self, stage1_draft: dict, ext_fr: list[dict],
                         prim_segs: list[dict], ext_segs: list[dict]) -> dict:
