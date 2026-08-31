@@ -1,0 +1,87 @@
+{
+  "benchmark_id": "singing-intent-decision-v1.0",
+  "schema_version": "creative_intent_v1",
+  "upstream": {
+    "pipeline": "V2.1a Creative Tagging (frozen)",
+    "input": "creative_tags.json (creative_tagging_v1)",
+    "source_run": "output/benchmark-runs/v2.1a-val-phase2 (qwen3.7-plus E2E, 10/10 completed)"
+  },
+  "ground_truth": {
+    "source": "docs/benchmarks/singing-intent-decision-benchmark-v1.0.md",
+    "note": "GT statements below are copied verbatim from the benchmark doc (single source of truth); do not edit here without updating the doc first."
+  },
+  "acceptance": {
+    "primary_driver_semantic_match": ">=8/10 (core click causality consistent with human GT; not string match)",
+    "unresolved_question_semantic_match": ">=8/10 (continues the ad's question; genuinely unresolved; no unfounded new question)",
+    "primary_uniqueness": "10/10 (exactly one primary_driver — schema-enforced)",
+    "evidence_grounding": "10/10 (every evidence item verbatim from V2.1a creative_tags.json — schema-enforced)",
+    "intent_strength": "observation only in v1 (no exact-match gate)",
+    "supporting_drivers": "observation only in v1 (no exact-match gate)"
+  },
+  "evaluation": {
+    "semantic_judge": "LLM judge (same provider) comparing model output vs GT statements; primary_match/question_match must be native JSON booleans (strict validation, bounded retries, judge_failed on exhaustion); programmatic gates for uniqueness/grounding come from creative_intent_v1 schema validation",
+    "note": "First-round results are reported as-is; no gate-driven tuning."
+  },
+  "items": [
+    {
+      "id": "v01",
+      "primary_driver_gt": "看到真实学员通过宋老师的轻松唱歌法改掉喉咙唱歌、获得明显演唱改善，让用户相信自己也可能复制这样的学习结果。",
+      "unresolved_question_gt": "她具体是怎么通过这套轻松唱歌法改掉喉咙唱歌的，我也能学会吗？",
+      "intent_strength_gt": "strong"
+    },
+    {
+      "id": "v02",
+      "primary_driver_gt": "专业老师直接用歌曲示范带练，并把唱歌学习简化成容易跟做的过程，让用户相信自己也可以跟着老师一步步学会唱歌。",
+      "unresolved_question_gt": "老师这个简化后的带唱方法具体怎么练，我跟着学也能把歌唱好吗？",
+      "intent_strength_gt": "medium"
+    },
+    {
+      "id": "v03",
+      "primary_driver_gt": "普通人跟着宋老师系统学习一个月，就可能获得明显的演唱提升、甚至让家人刮目相看，让用户相信自己也有机会复制这样的学习结果。",
+      "unresolved_question_gt": "他这一个月到底是怎么学、练了什么，我跟着同样的课程也能达到这样的效果吗？",
+      "intent_strength_gt": "strong"
+    },
+    {
+      "id": "v04",
+      "primary_driver_gt": "看到一个普通妈妈参加宋老师的唱歌训练后真的发生了明显变化，让用户相信中老年人通过学习也能获得类似的唱歌提升和积极改变。",
+      "unresolved_question_gt": "她参加训练营后到底学了什么、为什么会有这样的变化，我家里这个年龄的人也能做到吗？",
+      "intent_strength_gt": "strong"
+    },
+    {
+      "id": "v05",
+      "primary_driver_gt": "通过打开和使用正确的身体发声通道，可以让声音不再卡在喉咙、变得更顺畅好听，让用户相信自己的发声问题存在一个可以理解和改善的具体机制。",
+      "unresolved_question_gt": "所谓“打开身体发声通道”具体是什么意思，我要怎么做才能让声音不再卡在喉咙？",
+      "intent_strength_gt": "strong"
+    },
+    {
+      "id": "v06",
+      "primary_driver_gt": "唱歌不是只靠嗓子用力，而是可以借助后腰等身体力量把声音送出去；这个具体的新方法方向，让用户觉得自己原来的发声方式可能错了，而且存在一个可以直接学习的替代方法。",
+      "unresolved_question_gt": "具体要怎么找到并使用这个“后腰发动机”，才能真正把声音送出去而不是继续用嗓子挤？",
+      "intent_strength_gt": "strong"
+    },
+    {
+      "id": "v07",
+      "primary_driver_gt": "看到一位57岁的普通妈妈通过学习，不仅能在真实场合唱出明显更好的效果，还能获得家人和周围人的惊喜认可，让用户相信自己也可能通过学习获得类似的改变。",
+      "unresolved_question_gt": "她到底学了什么、怎么练，才会在这个年龄唱出这样的效果，我跟着学也能做到吗？",
+      "intent_strength_gt": "strong"
+    },
+    {
+      "id": "v08",
+      "primary_driver_gt": "原本看起来专业复杂的正确发声，其实可以通过简单、直观、能马上跟着做的方法来练习，让用户觉得改善喉咙用力等发声问题并没有想象中那么难。",
+      "unresolved_question_gt": "这个简单方法具体该怎么做、怎么练，才能真的改善我唱歌时喉咙用力的问题？",
+      "intent_strength_gt": "strong"
+    },
+    {
+      "id": "v09",
+      "primary_driver_gt": "年龄大、零基础并不意味着学不会唱歌，只要方法足够简单、容易开始，普通中老年人也可以跟着专业老师学习，让用户觉得“唱歌这件事我现在开始也来得及”。",
+      "unresolved_question_gt": "我这个年龄、又没有唱歌基础，具体该从哪里开始，真的能跟得上老师的学习方法吗？",
+      "intent_strength_gt": "strong"
+    },
+    {
+      "id": "v10",
+      "primary_driver_gt": "改掉喉咙唱歌的坏习惯并不需要复杂训练，一个简单、可以马上跟做的发声小方法，连高龄和零基础的人也能学习，让用户觉得自己同样有机会轻松掌握正确发声。",
+      "unresolved_question_gt": "这个小方法应该怎么正确练习，跟着做以后真的能帮我改掉喉咙唱歌的习惯吗？",
+      "intent_strength_gt": "strong"
+    }
+  ]
+}

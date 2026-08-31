@@ -1,6 +1,33 @@
-# V2.1a Creative Tagging
+# V2.1a Creative Tagging — Frozen
 
-V2.1a 基于 0–30s 决策窗口的多模态信息，产出三类业务标签（Value Tags / Opening Type / User Expectation），写入 `output/<creative_id>/v2/creative_tags.json`。与 V1 完全隔离（不改 V1 任何文件/行为）。规格见 `docs/v2.1a-creative-tagging-spec-v1.0.md`。
+V2.1a 基于 0–30s 决策窗口的多模态信息，产出三类业务标签（Value Tags / Opening Type / User Expectation），写入 `output/<creative_id>/v2/creative_tags.json`。与 V1 完全隔离（不改 V1 任何文件/行为）。规格见 `docs/v2.1a-creative-tagging-spec-v1.0.md`，最终裁决见 `docs/benchmarks/v2.1a-final-verdict.md`。
+
+## 正式接口与生产链路
+
+```text
+广告视频 → 0–30s 多模态理解 → 直接完成 Creative Tagging → creative_tags.json → V2.1b Intent Decision
+```
+
+- **正式输入**：广告视频。
+- **正式输出**：`creative_tags.json`（schema `creative_tagging_v1`：decision_window /
+  matched_value_tags / active_value_tags / opening_type / user_expectation / review，
+  每个标签带 evidence + confidence）。
+- **V2.1b 的必需输入只有 `creative_tags.json`**；其他中间产物不构成正式业务依赖。
+
+### Production Path（默认行为）
+
+**Direct Multimodal Creative Tagging**：单次多模态调用 Fast Path（帧 + 带时间戳转写
+→ 直接裁决 → creative_tags.json）。`V2_FORCE_STAGED` 默认关闭，该路径不产生
+structured_evidence.json。
+
+### Debug / Benchmark Path（非业务主链路）
+
+以下能力全部保留，但统一为 **Benchmark / Debug / 稳定性分析 / 异常排查工具**：
+
+- `V2_FORCE_STAGED=1`：staged 分批提取 + 受限裁决路径（单请求过载/超时时也会自动降级到该路径，属容错而非主链路）；
+- `structured_evidence.json`：staged 路径的中间工件，仅用于冻结证据复现与排查，不是正式输出；
+- `python -m v2.replay_adjudication`：adjudication-only replay（零提取成本重跑裁决）；
+- `v2/benchmarks/adjudication_stability.py` / `extraction_stability.py`：稳定性验证工具。
 
 ## 运行
 
@@ -11,7 +38,7 @@ cp config.env.example config.env   # 填入 API_BASE_URL / API_KEY / MODEL_NAME
 #   V2_API_BASE_URL / V2_API_KEY / V2_MODEL_NAME
 #   V2_FRAME_BUDGET=20  V2_FRAME_COMPRESS_KB=100  V2_TEMPERATURE=0
 #   V2_AUDIO_UNDERSTANDING_ENABLED=false   (MVP 默认 false：source=audio 非法)
-#   V2_FORCE_STAGED=1   (强制走分批请求路径，用于测试 correction #1)
+#   V2_FORCE_STAGED=1   (Debug/Benchmark 工具：强制走分批 + structured evidence 路径，生产默认关闭)
 #   WHISPER_MODEL=small
 
 # 2) 单视频打标
