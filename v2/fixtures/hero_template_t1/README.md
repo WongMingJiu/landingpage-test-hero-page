@@ -22,7 +22,7 @@
 
 ## 与生产链路的关系
 
-生产链路中，**V2.3（Skeleton-aware Copy）将输出与本目录同结构的 slots**（`t1_hero_slots_v1`：12 个动态字段 + fixture_id / intent_type 元信息），走同一条 prompt 占位符替换链路。本目录的 fixtures 即该结构的首批样例。
+V2.3 生产输出 `t1_hero_slots_v1` 仅包含 12 个动态 Slot；`fixture_id` / `intent_type` 仅存在于测试 fixture wrapper，不进入 Runtime Prompt 或生产 payload。本目录的 fixtures 即该结构的首批样例。
 
 ## 字数预算
 
