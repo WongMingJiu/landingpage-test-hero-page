@@ -1,0 +1,11 @@
+{
+  "template_id": "t1",
+  "contract": "docs/templates/singing-hero-template-t1-contract-v1.0.md",
+  "runtime_prompt": "v2/prompts/hero_template_t1.md",
+  "fixtures": [
+    {"file": "slots_a.json", "fixture_id": "t1_a", "intent_type": "综合发声改善"},
+    {"file": "slots_b.json", "fixture_id": "t1_b", "intent_type": "零基础/中老年低门槛"},
+    {"file": "slots_c.json", "fixture_id": "t1_c", "intent_type": "高音/挤嗓问题"}
+  ],
+  "usage": "template stability validation only; production slots come from V2.3 with the same structure (t1_hero_slots_v1)"
+}
