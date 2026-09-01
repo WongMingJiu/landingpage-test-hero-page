@@ -9,7 +9,7 @@
 > **代码使用方式（面向工程，非图像模型输入）**：
 >
 > 1. 读取本文件，提取 `<!-- BEGIN RUNTIME PROMPT -->` 与 `<!-- END RUNTIME PROMPT -->` 标记之间的正文；
-> 2. 将正文中全部 12 个 `{{slot_name}}` 占位符替换为 V2.3 输出的 slot values；
+> 2. 将正文中全部 12 个 `{{slot_name}}` 占位符替换为 V2.3 输出的 slot values（production payload 仅含这 12 个字段；fixtures 中的 `fixture_id` / `intent_type` 是测试元数据，替换时忽略）；
 > 3. 连同 T1 Canonical Reference Image（作为 `layout_ref`，由调用方传入，仓库不内嵌该图片资产）一起发送给 gpt-image-2；
 > 4. 替换前应按下方 Slot 契约校验字数预算，超预算文案先重写，不得交给图片模型自行解决。
 >
@@ -24,6 +24,7 @@
   "template_id": "t1",
   "prompt_version": "1.0",
   "schema": "t1_hero_slots_v1",
+  "production_slots_schema": "production payload = exactly the 12 dynamic_slots fields below; fixture metadata (fixture_id, intent_type) is test-only and NOT part of the production schema",
   "dynamic_slots": [
     {"name": "headline_line_1", "max_chars": 7, "preferred_chars": 6, "lines": 1},
     {"name": "headline_line_2", "max_chars": 7, "preferred_chars": 6, "lines": 1},
