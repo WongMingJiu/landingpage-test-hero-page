@@ -1,6 +1,6 @@
 # Singing Hero Template T1 Contract V1.1
 
-> 状态：**Active — Awaiting V1.1 Stability Replay**（V1.1 结构变更已完成并生成新 Reference；A/B/C 稳定性 replay 验证通过后冻结）
+> 状态：**Frozen / Template Stability Pass**（V1.1 已于 2026-09-08 通过 A/B/C 稳定性 replay 验证，3/3 PASS）
 >
 > Supersedes：T1 Contract V1.0（**Frozen**，`docs/templates/singing-hero-template-t1-contract-v1.0.md`——保留为历史版本，不再修改）
 >
@@ -44,7 +44,18 @@ T1 V1.0 已完成人工稳定性验证（历史事实，保留备查）：
 - 同一类文案重复生成时，核心结构保持稳定；
 - 老师人物、Logo、四利益卡、价格徽章（V1.1 已删除）、底部横幅、红橙综合色系整体保持稳定。
 
-**V1.1 变更（见 Changelog）已完成 Contract 与 Runtime Prompt 更新、并已生成 V1.1 Reference；V1.1 需通过 A/B/C 稳定性 replay 验证后冻结。**
+T1 V1.1 已完成 A/B/C 稳定性 replay 验证（t1-replay-v1.1-1，2026-09-08）：
+
+- 输入：`v2/prompts/hero_template_t1.md`（V1.1 Runtime Prompt）+ `v2/templates/hero_template_t1/reference_v1.1.png` + A/B/C fixtures（12-slot payload 原文，未改动）；
+- 模型：gpt-image-2 @ `/v1/images/edits`，size 1024x1536；每个 fixture 基于同一 V1.1 Reference **独立生成**（无 A→B→C 连续迭代）；
+- 结果：**3/3 PASS**（t1_a 58.6s / t1_b 55.6s / t1_c 56.2s）：
+  - 12 个 Dynamic Slot 全部逐字正确渲染，无漏字 / 错字 / 串 Slot；
+  - Bottom Banner 完整宽度横贯底部，文字视觉居中平衡，无右下独立圆形 Badge；
+  - 画面无「1元」、无任何价格 / 价格说明 / 优惠 / 折扣 / Offer 元素；
+  - Logo、两行大标题、副标题、左侧 4 利益卡与圆形音乐图标、宋伶俐人物、右侧竖排姓名条、红橙暖色背景完整保持，无新增人物 / CTA / 模块；
+  - 仅使用 5 天身体唱歌体验营 Product Truth，无 28 天正式营等越界信息。
+
+因此 T1 V1.1 从 2026-09-08 起冻结为稳定模板资产。后续除真实线上问题外，不继续为了个别样本调整版式、色板或结构。
 
 ---
 
@@ -485,7 +496,7 @@ T1 V1.1 后续生产结果至少满足：
 T1 版本管理：
 
 - **V1.0（Frozen，历史版本）**：`singing-hero-template-t1-contract-v1.0.md`——保留不动，其验证结论与 replay 记录作为历史事实备查；
-- **V1.1（本文件，Active）**：底部结构调整（删价格徽章 / 价格说明，Banner 完整宽度居中）。冻结条件：V1.1 Reference + A/B/C 稳定性 replay 验证通过。
+- **V1.1（本文件，Frozen）**：底部结构调整（删价格徽章 / 价格说明，Banner 完整宽度居中）。2026-09-08 通过 A/B/C 稳定性 replay（t1-replay-v1.1-1，3/3 PASS）后冻结。
 
 V1.1 冻结后，允许：
 
@@ -509,7 +520,7 @@ V1.1 冻结后，允许：
 
 # 12. Next Step
 
-T1 V1.1 冻结后立即进入：
+T1 V1.1 已冻结，下一步进入：
 
 > **T2 — 老师 / 结果 / 低门槛承接型 Template Stability Validation**
 

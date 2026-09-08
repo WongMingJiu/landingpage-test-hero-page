@@ -43,7 +43,7 @@ V2.3 生产输出 `t1_hero_slots_v1` 仅包含 12 个动态 Slot；`fixture_id` 
 
 ### t1-replay-1（2026-09-01，T1 V1.0 时代记录，保留备查）
 
-> 注：本次 replay 基于 V1.0 Runtime Prompt + V1.0 原始 reference（含 1 元徽章与价格说明）。V1.1 已移除价格信息并生成新 reference（`v2/templates/hero_template_t1/reference_v1.1.png`）；V1.1 的 A/B/C replay 尚未执行，属冻结前置条件。
+> 注：本次 replay 基于 V1.0 Runtime Prompt + V1.0 原始 reference（含 1 元徽章与价格说明）。V1.1 已移除价格信息并生成新 reference（`v2/templates/hero_template_t1/reference_v1.1.png`）；V1.1 的 replay 验证见下节 t1-replay-v1.1-1。
 
 - **输入**：`v2/prompts/hero_template_t1.md`（提取 BEGIN/END RUNTIME PROMPT 正文 + 12 个 `{{slot}}` 占位符替换，fixture 元数据不进入 prompt）+ 原始 T1 reference image（“模板 1.png”，即底部仍为“7 天”历史口径的来源图）；
 - **模型**：gpt-image-2 @ `/v1/images/edits`，size 1024x1536，每 fixture 各 1 次；
@@ -54,3 +54,17 @@ V2.3 生产输出 `t1_hero_slots_v1` 仅包含 12 个动态 Slot；`fixture_id` 
   - **底部价格说明三张均为 5 天版本原文**（参考图上的“7 天”历史口径被正确覆盖）；
   - 未出现 28 天正式营、新模块、新人物、CTA 按钮等越界内容；
 - **输出留存**：`output/t1-replay/t1_{a,b,c}.png` + `replay_log.json`（output/ 不进 git，本地留存）。
+
+### t1-replay-v1.1-1（2026-09-08，T1 V1.1 冻结验证，3/3 PASS）
+
+- **输入**：`v2/prompts/hero_template_t1.md`（V1.1 Runtime Prompt，提取 BEGIN/END 正文 + 12 个 `{{slot}}` 占位符替换）+ T1 V1.1 Reference（`v2/templates/hero_template_t1/reference_v1.1.png`）+ 本目录 A/B/C fixtures（12-slot payload 原文，未改动）；
+- **模型**：gpt-image-2 @ `/v1/images/edits`，size 1024x1536；每个 fixture 基于同一 V1.1 Reference **独立生成**（无 A→B→C 连续迭代）；
+- **结果**：**3/3 成功**（t1_a 58.6s / t1_b 55.6s / t1_c 56.2s）；
+- **验证结论**（逐张人工核验）：
+  - 12 个 slot 文案均逐字正确渲染，无漏字 / 错字 / 串 Slot；
+  - Bottom Banner 完整宽度横贯底部，文字视觉居中平衡，未重新生成右下独立圆形 Badge；
+  - 画面无「1元」、无任何价格 / 价格免责声明 / 优惠 / 折扣 / Offer 元素；
+  - 模板保真：顶部 Logo、两行大标题、副标题、左侧 4 利益卡与圆形音乐图标、宋伶俐人物、右侧竖排姓名条、红橙暖色背景完整保持，无新增人物 / CTA / 模块；
+  - 产品边界：仅 5 天身体唱歌体验营，无 28 天正式营等越界信息；
+- **结论**：T1 V1.1 满足冻结条件，Contract V1.1 状态已更新为 **Frozen / Template Stability Pass**；
+- **输出留存**：`output/t1-replay-v1.1/t1_{a,b,c}.png` + `replay_log.json`（output/ 不进 git，本地留存）。

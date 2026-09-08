@@ -1,6 +1,8 @@
 {
   "template_id": "t1",
   "template_version": "1.1",
+  "status": "frozen",
+  "last_stability_replay": "t1-replay-v1.1-1 (2026-09-08, gpt-image-2 @ /v1/images/edits, reference_v1.1.png, 3/3 PASS)",
   "contract": "docs/templates/singing-hero-template-t1-contract-v1.1.md",
   "runtime_prompt": "v2/prompts/hero_template_t1.md",
   "reference_image": "v2/templates/hero_template_t1/reference_v1.1.png",
