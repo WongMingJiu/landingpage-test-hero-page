@@ -1,12 +1,12 @@
 {
   "fixture_id": "t2_a",
-  "intent_type": "",
-  "headline_line_1": "",
-  "headline_line_2": "",
-  "badge_right": "",
-  "benefit_badge_1": "",
-  "benefit_badge_2": "",
-  "benefit_badge_3": "",
-  "benefit_badge_4": "",
-  "bottom_banner_text": ""
+  "intent_type": "trust_confirmation",
+  "headline_line_1": "跟着老师学",
+  "headline_line_2": "唱歌更简单",
+  "badge_right": "老师带练",
+  "benefit_badge_1": "老师指导",
+  "benefit_badge_2": "循序教学",
+  "benefit_badge_3": "基础练习",
+  "benefit_badge_4": "轻松跟学",
+  "bottom_banner_text": "宋老师5天带你唱歌入门"
 }
