@@ -189,6 +189,20 @@ bottom_banner_text
 
 除以上字段外，模型不得自行创建新文案区域。
 
+## Teacher Identity Layer
+
+Teacher Name：`宋伶俐`
+
+Teacher Title：由 `assets/categories/{category}/config.json` 中的 `title_pool` 提供（唱歌品类即 `assets/categories/singing/config.json`，当前为：`兴趣岛唱歌训练营首席讲师` / `身体唱歌法创始人`）。
+
+规则：
+
+- Teacher Title **不属于 Dynamic Copy Slots**；
+- **不参与 Message Match Experiment**；
+- **不由 LLM 自行生成**；
+- 仅作为 **Teacher Metadata 渲染**（头衔渲染以 `title_pool` 为准，含 Reference 定稿时 §4.2 修正注记第 3 条的头衔统一）；
+- **保留当前 category config 的 `title_pool` 机制**——不修改 `title_pool` 内容，不修改 Teacher Title。
+
 ---
 
 # 5. Slot Contract

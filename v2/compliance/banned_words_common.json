@@ -1,0 +1,24 @@
+{
+  "dictionary_id": "banned_words_common",
+  "version": "1.0",
+  "source": "assets/categories/singing/config.json#banned_words",
+  "purpose": "V2 通用 Copy Generation Compliance Dictionary — copy generation 阶段禁止生成以下词汇",
+  "applies_to_slots": [
+    "headline_line_1",
+    "headline_line_2",
+    "badge_right",
+    "benefit_badge_1",
+    "benefit_badge_2",
+    "benefit_badge_3",
+    "benefit_badge_4",
+    "bottom_banner_text"
+  ],
+  "rule": "Copy Generation 阶段禁止在上述动态 Slot 的文案中生成 banned_words 中的任何词汇",
+  "not_applied_to": [
+    "teacher_name",
+    "teacher_title",
+    "teacher_metadata"
+  ],
+  "not_applied_to_note": "暂不应用于 Teacher Name / Teacher Title / Teacher Metadata（Teacher Identity Layer 见 docs/templates/singing-hero-template-t2-contract-v1.0.md §4.4）",
+  "banned_words": ["全国领先", "全国第一", "人民大会堂", "包教包会", "立竿见影", "药到病除", "零风险", "无副作用", "限时秒杀", "不买后悔", "错过再无", "缓解疼痛", "驰名商标"]
+}
