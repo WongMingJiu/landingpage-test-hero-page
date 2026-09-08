@@ -2,7 +2,7 @@
 
 ## 用途
 
-本目录存放 T1（问题 / 方法 / 四利益卡承接型）Hero 模板的**已验证测试文案 fixtures**，配合 [v2/prompts/hero_template_t1.md](../../prompts/hero_template_t1.md)（Canonical Runtime Prompt）与 [docs/templates/singing-hero-template-t1-contract-v1.0.md](../../../docs/templates/singing-hero-template-t1-contract-v1.0.md)（Contract）使用：
+本目录存放 T1（问题 / 方法 / 四利益卡承接型）Hero 模板的**已验证测试文案 fixtures**，配合 [v2/prompts/hero_template_t1.md](../../prompts/hero_template_t1.md)（Canonical Runtime Prompt）与 [docs/templates/singing-hero-template-t1-contract-v1.1.md](../../../docs/templates/singing-hero-template-t1-contract-v1.1.md)（Contract，当前版本 V1.1）使用：
 
 - 验证 prompt 的 12 个 `{{slot}}` 占位符替换链路正确；
 - 验证不同 intent 类型的文案在固定模板下的渲染稳定性（结构 / 色系 / 人物不漂移）；
@@ -37,12 +37,13 @@ V2.3 生产输出 `t1_hero_slots_v1` 仅包含 12 个动态 Slot；`fixture_id` 
 
 - 老师：**宋伶俐**（本阶段不可替换，不换老师形象）；
 - 产品：**5 天身体唱歌体验营**（不允许带入 28 天正式营内容）；
-- 价格徽章：**1 元**；
-- 底部价格说明固定文案：**此价格为5天体验/试学课价格，具体收费以实际课程信息为准**（不得回退为“7 天”历史口径）。
+- 价格信息：**无**（V1.1 起 Hero 画面不展示任何价格徽章 / 价格说明 / 优惠信息，也不得由 Runtime 自行生成；V1.0 时代的「1 元」徽章与 5 天价格免责声明已随 V1.1 移除，历史口径见 Contract V1.0）。
 
 ## Replay 记录
 
-### t1-replay-1（2026-09-01，slots_a 修订后）
+### t1-replay-1（2026-09-01，T1 V1.0 时代记录，保留备查）
+
+> 注：本次 replay 基于 V1.0 Runtime Prompt + V1.0 原始 reference（含 1 元徽章与价格说明）。V1.1 已移除价格信息并生成新 reference（`v2/templates/hero_template_t1/reference_v1.1.png`）；V1.1 的 A/B/C replay 尚未执行，属冻结前置条件。
 
 - **输入**：`v2/prompts/hero_template_t1.md`（提取 BEGIN/END RUNTIME PROMPT 正文 + 12 个 `{{slot}}` 占位符替换，fixture 元数据不进入 prompt）+ 原始 T1 reference image（“模板 1.png”，即底部仍为“7 天”历史口径的来源图）；
 - **模型**：gpt-image-2 @ `/v1/images/edits`，size 1024x1536，每 fixture 各 1 次；

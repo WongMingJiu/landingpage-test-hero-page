@@ -1,16 +1,18 @@
 # T1 Hero Template — Canonical Runtime Prompt
 
-> 模板：T1 问题 / 方法 / 四利益卡承接型（Frozen V1.0）
+> 模板：T1 问题 / 方法 / 四利益卡承接型（**V1.1 — Active**）
 >
 > 品类：唱歌 | 产品：**5 天身体唱歌体验营 Only** | 老师：**宋伶俐**（固定，本阶段不可替换）
 >
-> Source of Truth：`docs/templates/singing-hero-template-t1-contract-v1.0.md`（本文件为该 Contract 第 9.2 节 Canonical Prompt Template 的独立生产版，内联完整色板、Slot 契约与合规边界，不依赖 docs 中的任何"见上文"）
+> Source of Truth：`docs/templates/singing-hero-template-t1-contract-v1.1.md`（本文件为该 Contract 第 9.2 节 Canonical Prompt Template 的独立生产版，内联完整色板、Slot 契约与合规边界，不依赖 docs 中的任何"见上文"）
+>
+> **V1.1 变更**：Hero 不再展示任何价格信息——无右下「1元」价格徽章、无底部价格免责声明；Bottom Banner 为完整宽度的底部销售收束模块，视觉居中平衡。12 个 Dynamic Slots 完全不变。
 >
 > **代码使用方式（面向工程，非图像模型输入）**：
 >
 > 1. 读取本文件，提取 `<!-- BEGIN RUNTIME PROMPT -->` 与 `<!-- END RUNTIME PROMPT -->` 标记之间的正文；
 > 2. 将正文中全部 12 个 `{{slot_name}}` 占位符替换为 V2.3 输出的 slot values（production payload 仅含这 12 个字段；fixtures 中的 `fixture_id` / `intent_type` 是测试元数据，替换时忽略）；
-> 3. 连同 T1 Canonical Reference Image（作为 `layout_ref`，由调用方传入，仓库不内嵌该图片资产）一起发送给 gpt-image-2；
+> 3. 连同 T1 V1.1 Reference Image（`v2/templates/hero_template_t1/reference_v1.1.png`，作为 `layout_ref`）一起发送给 gpt-image-2；
 > 4. 替换前应按下方 Slot 契约校验字数预算，超预算文案先重写，不得交给图片模型自行解决。
 >
 > 禁止：改写正文语义、增删 Slot、拆分本文件。
@@ -22,8 +24,10 @@
 ```json
 {
   "template_id": "t1",
-  "prompt_version": "1.0",
+  "prompt_version": "1.1",
   "schema": "t1_hero_slots_v1",
+  "contract": "docs/templates/singing-hero-template-t1-contract-v1.1.md",
+  "reference_image": "v2/templates/hero_template_t1/reference_v1.1.png",
   "production_slots_schema": "production payload = exactly the 12 dynamic_slots fields below; fixture metadata (fixture_id, intent_type) is test-only and NOT part of the production schema",
   "dynamic_slots": [
     {"name": "headline_line_1", "max_chars": 7, "preferred_chars": 6, "lines": 1},
@@ -43,8 +47,7 @@
     "teacher": "宋伶俐",
     "teacher_name_bar": "宋伶俐",
     "product": "5天身体唱歌体验营",
-    "price_badge": "1元",
-    "price_disclaimer": "此价格为5天体验/试学课价格，具体收费以实际课程信息为准"
+    "price_info": "none — V1.1 removes the price badge and price disclaimer; the Hero must not show any price / offer information"
   }
 }
 ```
@@ -71,18 +74,14 @@
 - 左侧 4 个利益卡片的位置、数量、尺寸和圆形音乐图标；
 - 右侧宋伶俐老师人物，包括服装、发型、饰品、姿态、位置和大致占比；
 - 右侧竖排姓名条"宋伶俐"；
-- 底部大型横幅的几何结构；
-- 右下"1元"价格徽章；
-- 红橙暖色背景、音乐元素与金色高光；
-- 底部价格说明区域。
+- 底部完整宽度大型横幅的几何结构与居中平衡；
+- 红橙暖色背景、音乐元素与金色高光。
 
 【固定业务文字（一字不改）】
 Teacher：宋伶俐
 右侧姓名条：宋伶俐
-Price Badge：1元
-底部价格说明：此价格为5天体验/试学课价格，具体收费以实际课程信息为准
 
-注意：底部价格说明不得回退或改写为"7 天体验/试学课"等历史口径，必须保持上述 5 天版本原文。
+注意：V1.1 画面不包含任何价格信息——无价格徽章、无价格说明文字；不得恢复或新增。
 
 【T1 固定色板（辅助锁定值，参考图优先）】
 背景：主红橙 #F24A3A / 中间暖橙 #F57A45 / 浅橙高光 #F6A05A / 浅杏橙 #FFD4A6
@@ -90,7 +89,6 @@ Price Badge：1元
 副标题：主橙红 #F45A2A / 暖白 #FFF8F0
 利益卡：图标主红 #E53922 / 图标深红 #C92C1B / 卡片浅米 #FFF1E5 / 卡片浅金描边 #F7C98A / 标题深暖红 #C92C1B / 说明暖深棕 #7A3323
 底部横幅：主红 #E3361E / 高光红橙 #F25A2D / 白字 #FFF8F0 / 重点黄 #FFD84A
-价格徽章：主红 #D92F1A / 亮红 #F25A2D / 数字黄 #FFD84A / 黄色高光 #FFF09A / "元"字暖白 #FFF8F0
 装饰：暖白 #FFF8F0 / 浅金 #F9D28B / 暖棕 #A85D2A
 
 颜色以参考图为第一依据，色号用于防止整体视觉漂移。
@@ -129,6 +127,7 @@ bottom_banner_text = "{{bottom_banner_text}}"
 禁止加入：28 天正式营、21 天班、正式营价格体系、实物礼盒、麦克风、K 歌音箱、曲谱集、1V9 直播带练、三师服务、永久回放、四周课程体系，或其他任何仅在正式营中成立的内容。
 不得虚构课程承诺、老师头衔、医疗健康效果。
 不得把课程"可教授的方法"改写成"用户一定获得的固定结果"。
+画面不得出现任何价格、优惠或 Offer 信息：不得新增、恢复或生成任何价格徽章、价格说明文字或折扣表达。
 
 【合规边界（违禁表达，一律禁止）】
 - 全国领先 / 全国第一 / 第一 / 唯一 / 首席；
@@ -144,7 +143,7 @@ bottom_banner_text = "{{bottom_banner_text}}"
 不要换老师；
 不要换老师服装或姿势；
 不要增加或减少利益卡；
-不要移动价格徽章；
+不要新增任何价格徽章、价格说明、优惠信息或 Offer 元素；
 不要换 Logo；
 不要增加 CTA 按钮；
 不要新增课程表、歌曲列表或新人物；
