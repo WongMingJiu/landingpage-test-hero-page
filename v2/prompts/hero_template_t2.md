@@ -1,6 +1,6 @@
 # T2 Hero Template — Canonical Runtime Prompt
 
-> 模板：T2 老师 / 结果 / 低门槛承接型（**V1.0 — Draft**）
+> 模板：T2 老师 / 适配 / 低门槛承接型（**V1.0 — Draft**）
 >
 > 品类：唱歌 | 产品：**5 天身体唱歌体验营 Only** | 老师：**宋伶俐**（固定，本阶段不可替换）
 >

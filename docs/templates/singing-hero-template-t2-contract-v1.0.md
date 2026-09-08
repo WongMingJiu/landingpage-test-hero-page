@@ -6,7 +6,7 @@
 >
 > 产品范围：**5 天身体唱歌体验营 Only**
 >
-> 模板定位：**T2 — 老师 / 结果 / 低门槛承接型**
+> 模板定位：**T2 — 老师 / 适配 / 低门槛承接型**
 >
 > 下游用途：V2.2 Hero Strategy、V2.3 Skeleton-aware Copy、gpt-image-2 固定模板文案替换
 >
@@ -43,7 +43,7 @@ Replay Validation（每 fixture 独立生成）
 
 # 1. 模板核心定位
 
-T2 是一个**老师 / 结果 / 低门槛承接型** Hero Skeleton。
+T2 是一个**老师 / 适配 / 低门槛承接型** Hero Skeleton。
 
 它承接用户点击广告后产生的核心问题：
 
