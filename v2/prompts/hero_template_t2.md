@@ -8,7 +8,7 @@
 >
 > **Draft 状态**：T2 Reference Image 尚未定稿入库（`v2/templates/hero_template_t2/reference_v1.0.png` 待补充）；A/B/C fixture 文案未设计；Replay Validation 未执行。Reference 定稿前本 prompt 不可用于生产。
 >
-> **价格边界**：T2 Hero 不承担价格展示职责——画面不得出现任何价格、优惠、折扣、Offer Badge 或价格免责声明。
+> **价格边界**：T2 Hero 不承担价格展示职责——禁止动态价格、优惠、折扣、Offer Badge；允许媒体或平台强制要求展示的合规免责声明（固定 Compliance Layer，不属于 Price Experiment Variable）。价格信息不进入 Dynamic Copy Slots。
 >
 > **代码使用方式（面向工程，非图像模型输入）**：
 >
@@ -31,7 +31,7 @@
   "status": "draft",
   "contract": "docs/templates/singing-hero-template-t2-contract-v1.0.md",
   "reference_image": "v2/templates/hero_template_t2/reference_v1.0.png",
-  "reference_status": "pending — reference image not yet finalized; do not run production replay before it is committed",
+  "reference_status": "finalized — reference_v1.0.png committed 2026-09-08 (cleanup: left badge 0基础可学→零基础可学; compliance disclaimer kept as fixed compliance layer; teacher identity layer kept verbatim)",
   "production_slots_schema": "production payload = exactly the 8 dynamic_slots fields below; fixture metadata (fixture_id, intent_type) is test-only and NOT part of the production schema",
   "dynamic_slots": [
     {"name": "headline_line_1", "max_chars": 7, "preferred_chars": 5, "lines": 1},
@@ -49,7 +49,7 @@
     "product": "5天身体唱歌体验营",
     "left_badge": "零基础可学",
     "positioning_line": "专为中老年人设计的唱歌训练法",
-    "price_info": "disabled — T2 Hero does not show any price / offer information; no price badge, no price disclaimer"
+    "price_info": "disabled — no dynamic price / discount / offer expressions and no offer badges; platform-mandated compliance disclaimers are allowed as a fixed compliance layer"
   }
 }
 ```
@@ -86,7 +86,7 @@ Teacher：宋伶俐
 左侧胶囊 Badge：零基础可学
 定位语行：专为中老年人设计的唱歌训练法
 
-注意：T2 画面不包含任何价格信息——无价格徽章、无价格说明文字、无优惠或折扣表达；不得恢复或新增。
+注意：T2 画面不出现动态价格、优惠、折扣或 Offer Badge；媒体或平台强制要求展示的合规免责声明允许保留（固定 Compliance Layer）。价格信息不进入下方任何动态 Slot。
 
 【T2 固定色板（辅助锁定值，参考图优先）】
 顶部品牌栏：主红 #E63329 / 深红 #D42B1E / 文字暖白 #FFF8F0
@@ -129,7 +129,7 @@ bottom_banner_text = "{{bottom_banner_text}}"
 禁止加入：28 天正式营、21 天班、正式营价格体系、实物礼盒、麦克风、K 歌音箱、曲谱集、1V9 直播带练、三师服务、永久回放、四周课程体系，或其他任何仅在正式营中成立的内容。
 不得虚构课程承诺、老师头衔、医疗健康效果。
 不得把课程"可教授的方法"改写成"用户一定获得的固定结果"。
-画面不得出现任何价格、优惠或 Offer 信息：不得新增、恢复或生成任何价格徽章、价格说明文字或折扣表达。
+画面不得出现任何动态价格、优惠或折扣信息：不得新增、恢复或生成任何价格徽章、Offer Badge 或折扣表达（媒体或平台强制要求展示的合规免责声明除外）。
 
 【合规边界（违禁表达，一律禁止）】
 - 全国领先 / 全国第一 / 第一 / 唯一 / 首席；
@@ -139,6 +139,8 @@ bottom_banner_text = "{{bottom_banner_text}}"
 - 医疗治疗 / 疾病改善 / 抗衰 / 防病等健康疗效表达；
 - 不买后悔 / 错过再无等恐惧诱导；
 - 立即点击 / 马上领取等强按钮 CTA 表达，不新增任何 CTA 按钮。
+
+以上违禁表达仅约束 8 个动态 Slot 文案与模型自行新生成的任何文案；参考图固定保留的 Teacher Identity Layer / Metadata（竖排姓名条 Teacher Title，来源于 category config title_pool）不在此约束范围，按参考图原样保留。
 
 【禁止设计行为】
 不要重新设计海报；

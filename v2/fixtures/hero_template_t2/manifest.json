@@ -5,7 +5,7 @@
   "contract": "docs/templates/singing-hero-template-t2-contract-v1.0.md",
   "runtime_prompt": "v2/prompts/hero_template_t2.md",
   "reference_image": "v2/templates/hero_template_t2/reference_v1.0.png",
-  "reference_status": "pending — reference image not yet finalized; see v2/templates/hero_template_t2/README.md",
+  "reference_status": "finalized — reference_v1.0.png committed 2026-09-08, see v2/templates/hero_template_t2/README.md",
   "fixtures": [
     {"file": "slots_a.json", "fixture_id": "t2_a", "intent_type": ""},
     {"file": "slots_b.json", "fixture_id": "t2_b", "intent_type": ""},

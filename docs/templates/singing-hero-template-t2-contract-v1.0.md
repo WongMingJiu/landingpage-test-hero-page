@@ -1,6 +1,6 @@
 # Singing Hero Template T2 Contract V1.0
 
-> 状态：**Draft**（冻结前置条件：Reference Image 定稿入库 + A/B/C fixture 文案设计 + Replay Validation 3/3 PASS）
+> 状态：**Draft**（冻结前置条件：Reference Image 定稿入库 **✅ 已完成 2026-09-08** + A/B/C fixture 文案设计 + Replay Validation 3/3 PASS）
 >
 > 适用品类：唱歌
 >
@@ -23,7 +23,7 @@ T2 的目标与 T1 一致：
 当前状态 **Draft**，含义：
 
 - 本 Contract 与 Runtime Prompt 已建立；
-- Reference Image **尚未入库定稿**（候选来源见 §12）；
+- Reference Image **已定稿入库**（`v2/templates/hero_template_t2/reference_v1.0.png`，2026-09-08 Reference Cleanup 完成，定稿记录见 `v2/templates/hero_template_t2/README.md`）；
 - A/B/C fixture 文案**尚未设计**（当前仅有 schema 占位）；
 - Replay Validation 未执行。
 
@@ -85,14 +85,22 @@ Hard Rule：
 - 正式营四周课程体系；
 - 其他仅在正式营中成立的产品承诺。
 
-**价格规则：T2 Hero 不承担价格展示职责（price = disabled）。**
+**价格规则：T2 Hero 不承担价格展示职责（Price = disabled）。**
 
-画面禁止出现：
+禁止：
 
-- 任何价格；
-- 任何优惠 / 折扣表达；
-- 任何 Offer Badge；
-- 任何价格免责声明文字。
+- 动态价格；
+- 优惠表达；
+- 折扣表达；
+- Offer Badge。
+
+允许：
+
+- 媒体或平台强制要求展示的合规免责声明。
+
+说明：合规免责声明属于**固定 Compliance Layer**，不属于 Price Experiment Variable。
+
+价格信息不进入 Dynamic Copy Slots。
 
 ---
 
@@ -164,13 +172,13 @@ T2 固定为竖版唱歌课程营销 Hero，视觉结构如下：
 - Product Scope：`5 天身体唱歌体验营`；
 - Left Badge：`零基础可学`；
 - 定位语行：`专为中老年人设计的唱歌训练法`；
-- Price：`disabled`——画面不得出现任何价格、优惠、折扣、Offer Badge 或价格免责声明。
+- Price：`disabled`——不承担价格展示职责：禁止动态价格 / 优惠 / 折扣 / Offer Badge；媒体或平台强制要求展示的合规免责声明属于固定 Compliance Layer（见 §2 价格规则）。
 
 候选 Reference 修正注记（Reference 定稿时必须处理）：
 
 - 候选参考图（`模板 2.png`）上左侧胶囊为「0基础可学」，定稿时必须统一为 **`零基础可学`**；
-- 候选参考图底部存在一行价格免责声明小字，定稿时必须**移除**（price = disabled）；
-- 候选参考图竖排姓名条含「首席讲师」头衔表述，「首席」属 §8 违禁词，定稿时必须**合规复核并修正**。
+- 候选参考图底部存在一行价格免责声明小字，属于**固定 Compliance Layer**（媒体 / 平台合规要求），Reference 定稿时按合规要求处理，不作为 Price Experiment Variable；
+- 候选参考图竖排姓名条包含 Teacher Title 表述，该字段属于 **Teacher Identity Layer / Metadata**（见 §4.4），Reference 定稿时仅确认展示效果与业务要求，不修改 category config `title_pool` 与 Teacher Title 内容。
 
 ## 4.3 Dynamic Copy Slots
 
@@ -198,10 +206,12 @@ Teacher Title：由 `assets/categories/{category}/config.json` 中的 `title_poo
 规则：
 
 - Teacher Title **不属于 Dynamic Copy Slots**；
-- **不参与 Message Match Experiment**；
-- **不由 LLM 自行生成**；
-- 仅作为 **Teacher Metadata 渲染**（头衔渲染以 `title_pool` 为准，含 Reference 定稿时 §4.2 修正注记第 3 条的头衔统一）；
-- **保留当前 category config 的 `title_pool` 机制**——不修改 `title_pool` 内容，不修改 Teacher Title。
+- Teacher Title **不参与 Message Match Experiment**；
+- Teacher Title **不由 LLM Copy Generation 生成**；
+- Teacher Title **来源于 category config.json 的 `title_pool`**；
+- Teacher Title **不应用 `banned_words_common.json` Copy Generation Filter**（该 Filter 仅作用于 §4.3 动态 Slot，见 `v2/compliance/banned_words_common.json`）。
+
+Teacher Title 仅作为 Teacher Metadata 渲染；保留当前 category config 的 `title_pool` 机制——不修改 `title_pool` 内容，不修改 Teacher Title 内容。
 
 ---
 
@@ -366,9 +376,11 @@ V2.3 应负责生成满足字数预算的文案，不应把超长文案交给图
 - 速成 / 立竿见影；
 - 医疗治疗 / 疾病改善 / 抗衰 / 防病等健康疗效表达；
 - 不买后悔 / 错过再无等恐惧诱导；
-- 任何价格、优惠、折扣或 Offer 表达（Hero 画面不承载价格信息）。
+- 任何动态价格、优惠、折扣或 Offer 表达（媒体 / 平台强制要求展示的合规免责声明除外，见 §2 价格规则）。
 
 不得将课程"可教授的方法"改写成"用户一定获得的固定结果"。
+
+作用域说明：本节违禁表达约束作用于 **Copy Generation（§4.3 动态 Slot 文案）**；Teacher Name / Teacher Title / Teacher Metadata 属于 Teacher Identity Layer（见 §4.4），**不应用本节 Copy 约束**——与 `v2/compliance/banned_words_common.json` 的 `not_applied_to` 口径一致。
 
 ---
 
@@ -379,7 +391,7 @@ V2.3 应负责生成满足字数预算的文案，不应把超长文案交给图
 生产调用至少包含：
 
 ```text
-layout_ref = T2 Canonical Reference Image（v2/templates/hero_template_t2/reference_v1.0.png，待补充定稿）
+layout_ref = T2 Canonical Reference Image（v2/templates/hero_template_t2/reference_v1.0.png，已定稿 2026-09-08）
 prompt_template = 本文第 9.2 节
 slot_values = V2.3 输出的动态文案
 ```
@@ -400,7 +412,7 @@ Canonical Runtime Prompt 的独立生产版维护在：
 - Layout Lock：页面结构、元素位置、尺寸比例、色彩体系、老师人物必须保持；
 - 只替换 8 个 Dynamic Slot，禁止增加新文案区域、修改固定文案、修改老师信息、修改品牌元素；
 - 只能使用 5 天身体唱歌体验营 Product Truth；
-- 禁止任何价格 / 优惠信息、新增 CTA、新增价格 Badge / Offer Badge、自由重新设计 Hero。
+- 禁止动态价格 / 优惠 / 折扣信息、新增 CTA、新增价格 Badge / Offer Badge、自由重新设计 Hero（媒体 / 平台强制要求展示的合规免责声明除外）。
 
 ---
 
@@ -418,14 +430,14 @@ T2 后续 Replay Validation 至少满足：
 - 老师位置 / 大致比例稳定；
 - 竖排姓名条完整；
 - Bottom Banner 完整宽度、视觉居中平衡；
-- **无任何价格徽章 / 价格说明区域**。
+- **无动态价格 / 优惠 / 折扣 / Offer 元素**（固定 Compliance Layer 的合规免责声明除外）。
 
 ## Copy
 
 - 所有动态 Slot 文案准确；
 - 无明显乱码 / 错字；
 - 不明显溢出；
-- 画面不得出现任何价格、优惠或折扣文字。
+- 画面不得出现任何动态价格、优惠或折扣文字（合规免责声明层除外）。
 
 ## Visual
 
@@ -473,7 +485,7 @@ T2 版本管理：
 
 T2 从 Draft 走向 Frozen 的前置工作（按序）：
 
-1. **Reference Image 定稿**（需人工确认，见 §4.2 修正注记）：以候选参考图为来源，生成 / 修正版 T2 Reference——移除价格免责声明行、左胶囊统一为「零基础可学」、姓名条头衔合规修正——入库为 `v2/templates/hero_template_t2/reference_v1.0.png`；
+1. **Reference Image 定稿**（**✅ 已完成，2026-09-08**）：以候选参考图为来源的修正版 T2 Reference——价格免责声明行按固定 Compliance Layer 保留、左胶囊统一为「零基础可学」、姓名条 Teacher Title 按 §4.4 确认展示效果——已入库为 `v2/templates/hero_template_t2/reference_v1.0.png`；
 2. **A/B/C fixture 文案设计**：按 §5 字数预算设计三组不同 intent 的测试文案；
 3. **Replay Validation**：每 fixture 基于同一定稿 Reference 独立生成，人工核验 §10 标准；
 4. 3/3 PASS 后本 Contract 转为 **Frozen**，进入 T1 + T2 Dual-Template Exploration。
