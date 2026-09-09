@@ -1,0 +1,40 @@
+{
+  "benchmark_id": "singing-message-match-copy-v1.0",
+  "version": "1.0",
+  "module": "V2.3 Message Match Copy (skeleton-aware copy generation)",
+  "status": "frozen",
+  "frozen_at": "2026-09-09",
+  "frozen_prompt_version": "V1.2",
+  "frozen_prompt_sha256_12": "961cdadfe1e0",
+  "frozen_sha_note": "sha of the frozen prompt file INCLUDING the doc-only freeze status banner; generation rules identical to round_3 validation prompt (49586496361b), which only lacked the status lines",
+  "upstream": {
+    "v2_1a_tags_root": "output/benchmark-runs/v2.1a-val-phase2",
+    "v2_1a_note": "frozen V2.1a E2E run (qwen3.7-plus), 10/10 creative_tags.json + structured_evidence.json",
+    "v2_1b_intent_root": "output/benchmark-runs/intent-b2",
+    "v2_1b_note": "frozen V2.1b benchmark run (canonical per v2/benchmarks/singing-intent-decision-v1.0/README.md), 10/10 creative_intent.json, 4/4 gates PASS"
+  },
+  "creatives": ["v01", "v02", "v03", "v04", "v05", "v06", "v07", "v08", "v09", "v10"],
+  "templates": {
+    "t1": {"contract": "docs/templates/singing-hero-template-t1-contract-v1.1.md", "status": "Frozen", "slots": 12},
+    "t2": {"contract": "docs/templates/singing-hero-template-t2-contract-v1.0.md", "status": "Frozen (2026-09-09)", "slots": 8}
+  },
+  "knowledge_base": "docs/knowledge/singing-5day-experience-camp-kb-v1.0.md",
+  "compliance_dictionary": "v2/compliance/banned_words_common.json",
+  "generation": {
+    "prompt": "v2/prompts/message_match_copy.md",
+    "pipeline": "v2/message_match_copy.py",
+    "steps": "A creative_anchor extraction + B product grounding pack + C t1/t2 copy, one LLM call, as-is"
+  },
+  "evaluation": {
+    "programmatic": ["schema_validity (A)", "slot_contract (B)", "compliance_scope (C)", "grounding_trace (D)"],
+    "semantic_judge": ["anchor_preservation (E)", "intent_continuity (F)", "template_differentiation (G)"],
+    "observation": ["copy_quality (H)"]
+  },
+  "rounds": {
+    "discipline": "per-round Build Once -> Run v01-v10 Once -> Record As-Is -> Report; semantic retries forbidden, engineering retries bounded and logged",
+    "round_1": {"prompt": "V1.0", "sha256_12": "3b22aa9d1b4e", "run": "output/benchmark-runs/v2.3-message-match-copy-first-pass", "note": "baseline As-Is; slot_contract 15/20, differentiation 9/10, human compliance 19/20"},
+    "round_2": {"prompt": "V1.1", "sha256_12": "2f8face2a29a", "run": "output/benchmark-runs/v2.3-message-match-copy-second-pass", "note": "TD/intent fixed; but T2 anchor regressed to 6/10 (over-generalized worry dropped concrete anchors) + T1 subheadline/desc overrun"},
+    "round_3": {"prompt": "V1.2", "sha256_12": "49586496361b", "run": "output/benchmark-runs/v2.3-message-match-copy-third-pass", "note": "converged: programmatic 80/80 + semantic 40/40 all green, similarity warnings 0 -> FROZEN"}
+  },
+  "gt_usage": "human GT (primary_driver_gt / unresolved_question_gt) is NEVER a generation input; upstream actual outputs only"
+}
