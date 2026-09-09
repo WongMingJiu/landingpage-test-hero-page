@@ -1,12 +1,12 @@
 {
   "fixture_id": "t2_b",
-  "intent_type": "",
-  "headline_line_1": "",
-  "headline_line_2": "",
-  "badge_right": "",
-  "benefit_badge_1": "",
-  "benefit_badge_2": "",
-  "benefit_badge_3": "",
-  "benefit_badge_4": "",
-  "bottom_banner_text": ""
+  "intent_type": "beginner_anxiety",
+  "headline_line_1": "没基础别怕",
+  "headline_line_2": "从简单练起",
+  "badge_right": "中老年友好",
+  "benefit_badge_1": "简单入门",
+  "benefit_badge_2": "有人带练",
+  "benefit_badge_3": "开口练习",
+  "benefit_badge_4": "动作好学",
+  "bottom_banner_text": "宋老师5天带你轻松入门"
 }

@@ -1,16 +1,17 @@
 {
   "template_id": "t2",
   "template_version": "1.0",
-  "status": "draft",
+  "status": "frozen",
+  "last_stability_replay": "t2-replay-fixture-{a,b,c} (2026-09-08/09, gpt-image-2 @ /v1/images/edits, reference_v1.0.png 1024x1728, 3/3 PASS, frozen 2026-09-09)",
   "contract": "docs/templates/singing-hero-template-t2-contract-v1.0.md",
   "runtime_prompt": "v2/prompts/hero_template_t2.md",
   "reference_image": "v2/templates/hero_template_t2/reference_v1.0.png",
   "reference_status": "finalized — reference_v1.0.png committed 2026-09-08, see v2/templates/hero_template_t2/README.md",
   "fixtures": [
-    {"file": "slots_a.json", "fixture_id": "t2_a", "intent_type": ""},
-    {"file": "slots_b.json", "fixture_id": "t2_b", "intent_type": ""},
-    {"file": "slots_c.json", "fixture_id": "t2_c", "intent_type": ""}
+    {"file": "slots_a.json", "fixture_id": "t2_a", "intent_type": "trust_confirmation"},
+    {"file": "slots_b.json", "fixture_id": "t2_b", "intent_type": "beginner_anxiety"},
+    {"file": "slots_c.json", "fixture_id": "t2_c", "intent_type": "guided_learning"}
   ],
-  "fixtures_status": "placeholder — A/B/C copy not yet designed",
+  "fixtures_status": "completed — A/B/C replay validation 3/3 PASS (2026-09-08/09; run_ids: t2-replay-fixture-a-2 / t2-replay-fixture-b-1 / t2-replay-fixture-c-1; details in v2/fixtures/hero_template_t2/README.md)",
   "usage": "template stability validation only; V2.3 production output t2_hero_slots_v1 contains the 8 dynamic slots only — fixture_id / intent_type are test fixture wrapper metadata and do not enter the runtime prompt or production payload"
 }

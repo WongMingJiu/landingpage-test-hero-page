@@ -1,6 +1,6 @@
 # Singing Hero Template T2 Contract V1.0
 
-> 状态：**Draft**（冻结前置条件：Reference Image 定稿入库 **✅ 已完成 2026-09-08** + A/B/C fixture 文案设计 + Replay Validation 3/3 PASS）
+> 状态：**Frozen**（2026-09-09）——冻结前置条件全部达成：Reference Image 定稿入库 ✅ 2026-09-08 + A/B/C fixture 文案设计 ✅ + Replay Validation **3/3 PASS** ✅ 2026-09-08/09
 >
 > 适用品类：唱歌
 >
@@ -20,14 +20,14 @@ T2 的目标与 T1 一致：
 
 > **以已验证的 Control Hero 为固定视觉骨架，只允许替换有限文案 Slot，在尽量不改变设计与排版的前提下完成 Message Match。**
 
-当前状态 **Draft**，含义：
+当前状态 **Frozen**（2026-09-09），含义：
 
 - 本 Contract 与 Runtime Prompt 已建立；
-- Reference Image **已定稿入库**（`v2/templates/hero_template_t2/reference_v1.0.png`，2026-09-08 Reference Cleanup 完成，定稿记录见 `v2/templates/hero_template_t2/README.md`）；
-- A/B/C fixture 文案**尚未设计**（当前仅有 schema 占位）；
-- Replay Validation 未执行。
+- Reference Image **已定稿入库**（`v2/templates/hero_template_t2/reference_v1.0.png`，2026-09-08 Reference Cleanup 完成，1024x1728，定稿记录见 `v2/templates/hero_template_t2/README.md`）；
+- A/B/C fixture 文案已设计（trust_confirmation / beginner_anxiety / guided_learning，见 `v2/fixtures/hero_template_t2/`）；
+- Replay Validation 已执行：**3/3 PASS**（2026-09-08/09，gpt-image-2 @ `/v1/images/edits`，记录见 `v2/fixtures/hero_template_t2/README.md`）。
 
-冻结条件（与 T1 同等级别）：
+冻结链（与 T1 同等级别，已全部走完）：
 
 ```text
 Reference Image 定稿入库
@@ -459,7 +459,7 @@ T2 后续 Replay Validation 至少满足：
 
 T2 版本管理：
 
-- **V1.0（本文件，Draft）**：首个版本。冻结条件：Reference Image 定稿入库 + A/B/C fixture 文案设计 + Replay Validation 3/3 PASS。
+- **V1.0（本文件，Frozen 2026-09-09）**：首个版本。冻结条件 Reference Image 定稿入库 + A/B/C fixture 文案设计 + Replay Validation 3/3 PASS 已全部达成（replay 记录见 `v2/fixtures/hero_template_t2/README.md`）。
 
 冻结后允许：
 
@@ -483,11 +483,11 @@ T2 版本管理：
 
 # 12. Next Step
 
-T2 从 Draft 走向 Frozen 的前置工作（按序）：
+T2 从 Draft 走向 Frozen 的前置工作（已全部完成，2026-09-09 冻结）：
 
-1. **Reference Image 定稿**（**✅ 已完成，2026-09-08**）：以候选参考图为来源的修正版 T2 Reference——价格免责声明行按固定 Compliance Layer 保留、左胶囊统一为「零基础可学」、姓名条 Teacher Title 按 §4.4 确认展示效果——已入库为 `v2/templates/hero_template_t2/reference_v1.0.png`；
-2. **A/B/C fixture 文案设计**：按 §5 字数预算设计三组不同 intent 的测试文案；
-3. **Replay Validation**：每 fixture 基于同一定稿 Reference 独立生成，人工核验 §10 标准；
-4. 3/3 PASS 后本 Contract 转为 **Frozen**，进入 T1 + T2 Dual-Template Exploration。
+1. **Reference Image 定稿**（**✅ 已完成，2026-09-08**）：以候选参考图为来源的修正版 T2 Reference——价格免责声明行按固定 Compliance Layer 保留、左胶囊统一为「零 基础可学」、姓名条 Teacher Title 按 §4.4 确认展示效果——已入库为 `v2/templates/hero_template_t2/reference_v1.0.png`；
+2. **A/B/C fixture 文案设计**（**✅ 已完成，2026-09-08**）：按 §5 字数预算设计三组不同 intent 的测试文案（trust_confirmation / beginner_anxiety / guided_learning），见 `v2/fixtures/hero_template_t2/`；
+3. **Replay Validation**（**✅ 已完成，2026-09-08/09，3/3 PASS**）：每 fixture 基于同一定稿 Reference 独立生成（禁止 A→B→C 连续迭代），人工核验 §10 标准全部通过，记录见 `v2/fixtures/hero_template_t2/README.md`；
+4. **✅ 本 Contract 已于 2026-09-09 转为 Frozen**，进入 T1 + T2 Dual-Template Exploration。
 
 当前阶段不提前创建自动 Template Selector；先通过真实双模板结果学习路由规律。

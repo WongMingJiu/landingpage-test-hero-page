@@ -1,12 +1,12 @@
 {
   "fixture_id": "t2_c",
-  "intent_type": "",
-  "headline_line_1": "",
-  "headline_line_2": "",
-  "badge_right": "",
-  "benefit_badge_1": "",
-  "benefit_badge_2": "",
-  "benefit_badge_3": "",
-  "benefit_badge_4": "",
-  "bottom_banner_text": ""
+  "intent_type": "guided_learning",
+  "headline_line_1": "自己练怕错",
+  "headline_line_2": "跟着老师练",
+  "badge_right": "有人指导",
+  "benefit_badge_1": "老师指导",
+  "benefit_badge_2": "跟练打卡",
+  "benefit_badge_3": "作业反馈",
+  "benefit_badge_4": "点评答疑",
+  "bottom_banner_text": "宋老师5天带你跟着练"
 }

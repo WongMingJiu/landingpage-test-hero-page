@@ -1,6 +1,6 @@
 # T2 Hero Template — Reference Assets
 
-> 状态：**Reference 已定稿**（`reference_v1.0.png` 已入库，2026-09-08）
+> 状态：**模板 Frozen**（Reference 定稿 2026-09-08 + Replay Validation 3/3 PASS 2026-09-08/09，记录见 `v2/fixtures/hero_template_t2/README.md`）
 
 ## 资产清单
 
@@ -18,4 +18,4 @@
 
 ## 下一步
 
-- 进入 A/B/C fixture 文案设计 → Replay Validation 流程（Contract §12）。
+- ~~进入 A/B/C fixture 文案设计 → Replay Validation 流程（Contract §12）~~——已完成（3/3 PASS，2026-09-09 T2 冻结）；下一步：进入 T1 + T2 Dual-Template Exploration（Contract §12）。

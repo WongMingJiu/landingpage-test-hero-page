@@ -1,12 +1,12 @@
 # T2 Hero Template — Canonical Runtime Prompt
 
-> 模板：T2 老师 / 适配 / 低门槛承接型（**V1.0 — Draft**）
+> 模板：T2 老师 / 适配 / 低门槛承接型（**V1.0 — Active**）
 >
 > 品类：唱歌 | 产品：**5 天身体唱歌体验营 Only** | 老师：**宋伶俐**（固定，本阶段不可替换）
 >
 > Source of Truth：`docs/templates/singing-hero-template-t2-contract-v1.0.md`（本文件为该 Contract 第 9.2 节 Canonical Prompt Template 的独立生产版，内联完整色板、Slot 契约与合规边界，不依赖 docs 中的任何"见上文"）
 >
-> **Draft 状态**：T2 Reference Image 尚未定稿入库（`v2/templates/hero_template_t2/reference_v1.0.png` 待补充）；A/B/C fixture 文案未设计；Replay Validation 未执行。Reference 定稿前本 prompt 不可用于生产。
+> **冻结记录（2026-09-09）**：T2 Contract V1.0 已转 **Frozen**——Reference Image 定稿入库（`v2/templates/hero_template_t2/reference_v1.0.png`，1024x1728，2026-09-08）+ A/B/C fixture 完成（trust_confirmation / beginner_anxiety / guided_learning）+ Replay Validation **3/3 PASS**（2026-09-08/09，gpt-image-2 @ `/v1/images/edits`，记录见 `v2/fixtures/hero_template_t2/README.md`）。本 prompt 可用于生产；冻结后允许的变更范围见 Contract §11。
 >
 > **价格边界**：T2 Hero 不承担价格展示职责——禁止动态价格、优惠、折扣、Offer Badge；允许媒体或平台强制要求展示的合规免责声明（固定 Compliance Layer，不属于 Price Experiment Variable）。价格信息不进入 Dynamic Copy Slots。
 >
@@ -28,7 +28,7 @@
   "template_id": "t2",
   "prompt_version": "1.0",
   "schema": "t2_hero_slots_v1",
-  "status": "draft",
+  "status": "frozen (2026-09-09, replay validation 3/3 PASS)",
   "contract": "docs/templates/singing-hero-template-t2-contract-v1.0.md",
   "reference_image": "v2/templates/hero_template_t2/reference_v1.0.png",
   "reference_status": "finalized — reference_v1.0.png committed 2026-09-08 (cleanup: left badge 0基础可学→零基础可学; compliance disclaimer kept as fixed compliance layer; teacher identity layer kept verbatim)",
