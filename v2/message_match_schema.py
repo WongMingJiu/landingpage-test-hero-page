@@ -218,9 +218,35 @@ def newline_slot_values(obj: dict) -> list:
     return out
 
 
+def collect_anchor_values(creative_anchors: dict) -> set:
+    """Allowed anchor value set for used_anchors membership (V2.5-F §3).
+
+    现有 contract（V2.3 third-pass 冻结口径，不得擅自扩大或缩小）：
+      topics[].value + phrases[].value + user_concern.value + expectation.value
+      + user_concern/expectation 按中文标点（，。、；）切分的 core words。
+    null / empty string 不进入集合。Membership 必须是 exact value match
+    （不做 semantic similarity / substring / LLM judge）。
+    """
+    anchor_values: set = set()
+    for it in (creative_anchors or {}).get("topics") or []:
+        if isinstance(it, dict) and it.get("value"):
+            anchor_values.add(it["value"])
+    for it in (creative_anchors or {}).get("phrases") or []:
+        if isinstance(it, dict) and it.get("value"):
+            anchor_values.add(it["value"])
+    for key in ("user_concern", "expectation"):
+        it = (creative_anchors or {}).get(key)
+        if isinstance(it, dict) and it.get("value"):
+            anchor_values.add(it["value"])
+            # allow core words of the concern/expectation sentences as anchors too
+            for ch in ("，", "。", "、", "；"):
+                anchor_values.update(p.strip() for p in it["value"].split(ch) if p.strip())
+    return anchor_values
+
+
 def validate_grounding_trace(obj: dict) -> list:
     """used_grounding_facts must be verbatim pack statements; used_anchors must map
-    to anchor values."""
+    to anchor values (exact membership over collect_anchor_values)."""
     errs: list = []
     pack = obj.get("product_grounding_pack") or {}
     statements = set()
@@ -228,21 +254,7 @@ def validate_grounding_trace(obj: dict) -> list:
         for it in pack.get(key) or []:
             if isinstance(it, dict) and it.get("statement"):
                 statements.add(it["statement"])
-    anchors = obj.get("creative_anchors") or {}
-    anchor_values = set()
-    for it in anchors.get("topics") or []:
-        if isinstance(it, dict) and it.get("value"):
-            anchor_values.add(it["value"])
-    for it in anchors.get("phrases") or []:
-        if isinstance(it, dict) and it.get("value"):
-            anchor_values.add(it["value"])
-    for key in ("user_concern", "expectation"):
-        it = anchors.get(key)
-        if isinstance(it, dict) and it.get("value"):
-            anchor_values.add(it["value"])
-            # allow core words of the concern/expectation sentences as anchors too
-            for ch in ("，", "。", "、", "；"):
-                anchor_values.update(p.strip() for p in it["value"].split(ch) if p.strip())
+    anchor_values = collect_anchor_values(obj.get("creative_anchors"))
 
     for side in ("t1", "t2"):
         node = obj.get(side) or {}
@@ -253,6 +265,28 @@ def validate_grounding_trace(obj: dict) -> list:
             if anchor not in anchor_values:
                 errs.append(f"{side}.used_anchors item not an anchor value: {anchor!r}")
     return errs
+
+
+def validate_used_anchors_membership(obj: dict) -> list:
+    """V2.5-F structural gate: used_anchors exact membership (§3-§4).
+
+    与 validate_grounding_trace 的 anchor 部分同口径（同一 allowed set、
+    exact membership），但输出结构化错误对象，便于 structural gate 单独
+    统计（不与 semantic MRD 混为一个指标）。只报告，从不静默改写/替换。
+    """
+    errors: list = []
+    anchor_values = collect_anchor_values(obj.get("creative_anchors"))
+    for side in ("t1", "t2"):
+        node = obj.get(side) or {}
+        for value in node.get("used_anchors") or []:
+            if value not in anchor_values:
+                errors.append({
+                    "type": "INVALID_USED_ANCHOR",
+                    "template": side,
+                    "value": value,
+                    "allowed_values": sorted(anchor_values),
+                })
+    return errors
 
 
 def validate_compliance(obj: dict, banned_dict: dict) -> list:

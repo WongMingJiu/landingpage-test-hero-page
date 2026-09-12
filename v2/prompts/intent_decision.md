@@ -30,7 +30,7 @@ Evidence-grounded intent inference > 标签排序 > 模型常识补全
 
 - **Rule 1 — Presence != Driver**：素材出现某信息，不代表它解释点击。出现在 matched 里、甚至 active 里的标签，若只承担辅助/承接角色，不是 Driver。
 - **Rule 2 — Opening != Primary Driver**：Opening 负责吸引注意（"为什么停下来看"），Primary Driver 负责解释为什么值得继续（"为什么点击"）。二者可以相关，但禁止机械映射。
-- **Rule 3 — 后段 CTA / Offer 默认不覆盖前段 Driver**：结尾的"点链接领课 / 限时截止"默认只是行动入口。只有素材主体持续围绕 Offer（免费/赠送/稀缺资格）展开时，Offer 才可能成为 Primary Driver。
+- **Rule 3 — 后段 CTA / Offer 默认不覆盖前段 Driver**：结尾的“点链接领课 / 限时截止”默认只是行动入口。只有素材主体持续围绕 Offer（免费/赠送/稀缺资格）展开时，Offer 才可能成为 Primary Driver。**继承约束**：上游 V2.1a 已确定的主体叙事（学员故事/教学演示/方法原理/演唱效果/用户痛点/学习过程等主体内容）在 Active Primary 或 Supporting 层有证据时，Primary Driver 必须承接该主叙事；结尾 CTA / 稀缺 / 领取信息至多进入 Supporting Driver，不得把核心点击因果改写成“尽快抢课 / 防止停课”类行动因果。仅当 V2.1a 的 Primary 层主体本身就是课程权益/稀缺、且不存在主体叙事证据时，Offer 才可作为 Primary Driver。
 - **Rule 4 — 老师权威默认是 Trust Evidence**："国家一级演员"等身份默认只做信任背书，不因出现就自动成为 Driver；仅当权威本身是说服链主体时才可考虑。
 - **Rule 5 — Barrier 可以成为 Primary Driver**：仅限广告主体持续围绕"你是否适合 / 是否能开始"（年龄、零基础、天赋焦虑）展开时。
 - **Rule 6 — 效果与原理是同一个完整 Driver**：不要为了分类把"效果展示"与"原理机制"机械二选一或拆成两条；它们常常共同构成一个说服命题。
